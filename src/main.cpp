@@ -1,49 +1,84 @@
 #include <iostream>
-#include <vector>
 
-#include "MusicLibrary.h"
-#include "CsvLoader.h"
-
-using namespace std;
+#include "Song.h"
+#include "Playlist.h"
+#include "Player.h"
 
 int main()
 {
-    MusicLibrary library;
-    CsvLoader loader;
+    Song* song1 = new Song(
+        "Bohemian Rhapsody",
+        "Queen",
+        "A Night at the Opera",
+        "Rock",
+        1975,
+        354,
+        "queen.mp3"
+    );
 
-    vector<string> errors;
+    Song* song2 = new Song(
+        "Numb",
+        "Linkin Park",
+        "Meteora",
+        "Rock",
+        2003,
+        187,
+        "numb.mp3"
+    );
 
-    bool success = loader.load("Data/library.csv", library, errors);
+    Song* song3 = new Song(
+        "Hotel California",
+        "Eagles",
+        "Hotel California",
+        "Rock",
+        1976,
+        390,
+        "hotel.mp3"
+    );
 
-    if (!success)
+    Playlist playlist("Favorites");
+    playlist.addSong(song1);
+    playlist.addSong(song2);
+    playlist.addSong(song3);
+
+    Player player;
+
+    if (!player.loadPlaylist(&playlist))
     {
-        cout << "Failed to load CSV." << endl;
+        std::cout << "Failed to load playlist.\n";
+        return 0;
     }
 
-    cout << "Songs Loaded: " << library.size() << endl << endl;
+    std::cout << "===== PLAY =====\n";
+    player.play();
 
-    for (Song* song : library.getSongs())
+    std::cout << "\n===== SEEK +30 =====\n";
+    player.seekForward(30);
+
+    std::cout << "\n===== PAUSE =====\n";
+    player.pause();
+
+    std::cout << "\n===== RESUME =====\n";
+    player.resume();
+
+    std::cout << "\n===== NEXT =====\n";
+    player.next();
+
+    std::cout << "\n===== PREVIOUS =====\n";
+    player.previous();
+
+    std::cout << "\n===== TICK (5 sec) =====\n";
+    for (int i = 0; i < 5; i++)
     {
-        cout << "-----------------------------" << endl;
-        cout << "Title    : " << song->getTitle() << endl;
-        cout << "Artist   : " << song->getArtist() << endl;
-        cout << "Album    : " << song->getAlbum() << endl;
-        cout << "Genre    : " << song->getGenre() << endl;
-        cout << "Year     : " << song->getYear() << endl;
-        cout << "Duration : " << song->getFormattedDuration() << endl;
-        cout << "Path     : " << song->getFilePath() << endl;
+        player.tick();
     }
 
-    if (!errors.empty())
-    {
-        cout << endl;
-        cout << "========== Errors ==========" << endl;
+    std::cout << "\n===== STOP =====\n";
+    player.stop();
 
-        for (const string& error : errors)
-        {
-            cout << error << endl;
-        }
-    }
+    delete song1;
+    delete song2;
+    delete song3;
 
     return 0;
 }
