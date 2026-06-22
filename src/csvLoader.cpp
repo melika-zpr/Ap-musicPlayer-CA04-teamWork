@@ -5,10 +5,10 @@
 #include <algorithm>
 
 bool CsvLoader::load(const std::string& filePath, 
-                     std::vector<Song>& songs, 
+                     MusicLibrary& library, 
                      std::vector<std::string>& errorMessages) {
    
-    songs.clear();
+    library.clear();
     errorMessages.clear();
     
     std::ifstream file(filePath);
@@ -43,7 +43,7 @@ bool CsvLoader::load(const std::string& filePath,
         
         if (parseLine(line, song, errorMessage)) {
             if (song.isValid()) {
-                songs.push_back(song);
+                library.addSong(new Song(song));
             } else {
                 errorMessages.push_back("Line " + std::to_string(lineNumber) + 
                                       ": Invalid song data (missing required fields)");
@@ -56,12 +56,12 @@ bool CsvLoader::load(const std::string& filePath,
     
     file.close();
     
-    return !songs.empty();
+    return library.size() > 0;
 }
 
-bool CsvLoader::load(const std::string& filePath, std::vector<Song>& songs) {
+bool CsvLoader::load(const std::string& filePath, MusicLibrary& library) {
     std::vector<std::string> errorMessages;
-    return load(filePath, songs, errorMessages);
+    return load(filePath, library, errorMessages);
 }
 
 bool CsvLoader::parseLine(const std::string& line, 

@@ -69,3 +69,13 @@ int MusicLibrary::size() const
 {
     return songs.size();
 }
+
+void MusicLibrary::clear()
+{
+    for (Song* song : songs)
+    {
+        delete song;
+    }
+
+    songs.clear();
+}

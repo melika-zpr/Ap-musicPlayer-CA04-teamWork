@@ -1,57 +1,49 @@
 #include <iostream>
+#include <vector>
 
 #include "MusicLibrary.h"
+#include "CsvLoader.h"
 
 using namespace std;
 
 int main()
 {
     MusicLibrary library;
+    CsvLoader loader;
 
-    library.addSong(new Song(
-        "Bohemian Rhapsody",
-        "Queen",
-        "A Night at the Opera",
-        "Rock",
-        1975,
-        354,
-        "/music/bohemian.mp3"));
+    vector<string> errors;
 
-    library.addSong(new Song(
-        "Don't Stop Me Now",
-        "Queen",
-        "Jazz",
-        "Rock",
-        1978,
-        210,
-        "/music/dontstop.mp3"));
+    bool success = loader.load("Data/library.csv", library, errors);
 
-    library.addSong(new Song(
-        "Hotel California",
-        "Eagles",
-        "Hotel California",
-        "Rock",
-        1977,
-        391,
-        "/music/hotel.mp3"));
-
-    cout << "Total Songs: " << library.size() << endl;
-
-    auto queenSongs = library.filterByArtist("Queen");
-
-    cout << endl;
-    cout << "Queen Songs:" << endl;
-
-    for (Song* song : queenSongs)
+    if (!success)
     {
-        cout << song->getTitle() << endl;
+        cout << "Failed to load CSV." << endl;
     }
 
-    Song* s = library.findByFilePath("/music/hotel.mp3");
+    cout << "Songs Loaded: " << library.size() << endl << endl;
 
-    if (s != nullptr)
+    for (Song* song : library.getSongs())
+    {
+        cout << "-----------------------------" << endl;
+        cout << "Title    : " << song->getTitle() << endl;
+        cout << "Artist   : " << song->getArtist() << endl;
+        cout << "Album    : " << song->getAlbum() << endl;
+        cout << "Genre    : " << song->getGenre() << endl;
+        cout << "Year     : " << song->getYear() << endl;
+        cout << "Duration : " << song->getFormattedDuration() << endl;
+        cout << "Path     : " << song->getFilePath() << endl;
+    }
+
+    if (!errors.empty())
     {
         cout << endl;
-        cout << "Found: " << s->getTitle() << endl;
+        cout << "========== Errors ==========" << endl;
+
+        for (const string& error : errors)
+        {
+            cout << error << endl;
+        }
     }
+
+    return 0;
 }

@@ -15,6 +15,7 @@ public:
     ~MusicLibrary();
 
     void addSong(Song* song);
+    void clear();
 
     Song* getSong(int index) const;
 
