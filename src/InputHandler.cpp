@@ -13,17 +13,20 @@ int InputHandler::getIntChoice(const std::string& prompt, int min, int max) {
         
         if (std::cin.fail()) {
             clearError();
-            std::cout << "❌ Invalid input. Please enter a number." << std::endl;
+            std::cout << "\u2716 Invalid input. Please enter a number." << std::endl; 
             continue;
         }
         
         if (isValidRange(choice, min, max)) {
             valid = true;
         } else {
-            std::cout << "❌ Invalid choice. Please enter a number between " 
-                      << min << " and " << max << "." << std::endl;
+            std::cout << "\u2716 Invalid choice. Please enter a number between " 
+                      << min << " and " << max << "." << std::endl; 
         }
     }
+    
+    // پاک کردن بافر بعد از دریافت عدد
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     
     return choice;
 }
@@ -32,9 +35,7 @@ std::string InputHandler::getStringInput(const std::string& prompt) {
     std::string input;
     std::cout << prompt;
     std::getline(std::cin, input);
-    
     input = trim(input);
-    
     return input;
 }
 
@@ -45,7 +46,6 @@ char InputHandler::getCharKey(const std::string& prompt) {
     
     char key;
     std::cin >> key;
-    
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     
     return std::tolower(key);

@@ -15,7 +15,7 @@ void UIRenderer::clearScreen() const {
     std::system(CLEAR_CMD);
 }
 
-void UIRenderer::drawHorizontalLine(char ch, int width) const {
+void UIRenderer::drawHorizontalLine(const std::string& ch, int width) const {
     for (int i = 0; i < width; i++) {
         std::cout << ch;
     }
@@ -23,21 +23,21 @@ void UIRenderer::drawHorizontalLine(char ch, int width) const {
 }
 
 void UIRenderer::drawBorder(const std::string& title, int width) const {
-    std::cout << "╔";
-    for (int i = 0; i < width - 2; i++) std::cout << "═";
-    std::cout << "╗" << std::endl;
+    std::cout << "\u2554"; 
+    for (int i = 0; i < width - 2; i++) std::cout << "\u2550"; 
+    std::cout << "\u2557" << std::endl;  
     
     if (!title.empty()) {
         int padding = (width - 2 - title.length()) / 2;
-        std::cout << "║";
+        std::cout << "\u2551"; 
         for (int i = 0; i < padding; i++) std::cout << " ";
         std::cout << title;
         for (int i = 0; i < width - 2 - padding - title.length(); i++) std::cout << " ";
-        std::cout << "║" << std::endl;
+        std::cout << "\u2551" << std::endl; 
         
-        std::cout << "╠";
-        for (int i = 0; i < width - 2; i++) std::cout << "═";
-        std::cout << "╣" << std::endl;
+        std::cout << "\u2560";  
+        for (int i = 0; i < width - 2; i++) std::cout << "\u2550";  
+        std::cout << "\u2563" << std::endl;  
     }
 }
 
@@ -50,7 +50,7 @@ void UIRenderer::printHeader(const std::string& title) const {
 
 void UIRenderer::printFooter(const std::string& options) const {
     std::cout << std::endl;
-    drawHorizontalLine('-', 50);
+    drawHorizontalLine("\u2500", 50); 
     std::cout << options << std::endl;
     std::cout << std::endl;
 }
@@ -64,7 +64,7 @@ void UIRenderer::printMessage(const std::string& message, bool newLine) const {
 }
 
 void UIRenderer::printError(const std::string& error) const {
-    std::cout << "❌ " << error << std::endl;
+    std::cout << "\u2716 " << error << std::endl;  
 }
 
 void UIRenderer::printMenu(const std::vector<std::string>& items, 
@@ -120,7 +120,7 @@ void UIRenderer::printNowPlaying(const Song* song, float currentTime, float tota
     }
     
     std::cout << std::endl;
-    std::cout << "  🎵 " << song->getTitle() << std::endl;
+    std::cout << "  \u266B " << song->getTitle() << std::endl; 
     std::cout << "  Artist: " << song->getArtist() << std::endl;
     std::cout << "  Album: " << song->getAlbum() << std::endl;
     std::cout << "  Duration: " << formatDuration(song->getDurationSec()) << std::endl;
@@ -139,14 +139,14 @@ void UIRenderer::printNowPlaying(const Song* song, float currentTime, float tota
 
 void UIRenderer::printSettings(const std::string& currentMode) const {
     std::cout << "  Playback Mode (current: " << currentMode << ")" << std::endl;
-    drawHorizontalLine('-', 45);
+    drawHorizontalLine("\u2500", 45);  
     std::cout << std::endl;
     std::cout << "  1. NO_REPEAT  - play in order, stop at end" << std::endl;
     std::cout << "  2. REPEAT_ONE - repeat current song forever" << std::endl;
     std::cout << "  3. REPEAT_ALL - loop whole playlist" << std::endl;
     std::cout << "  4. SHUFFLE    - random order";
     if (currentMode == "SHUFFLE") {
-        std::cout << " ◀ (active)";
+        std::cout << " \u25C0 (active)"; 
     }
     std::cout << std::endl;
 }

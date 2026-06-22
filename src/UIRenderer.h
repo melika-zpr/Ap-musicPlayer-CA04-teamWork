@@ -12,7 +12,7 @@ public:
     
     void clearScreen() const;
     
-    void drawHorizontalLine(char ch = '=', int width = 40) const;
+    void drawHorizontalLine(const std::string& ch = "-", int width = 40) const;
     void drawBorder(const std::string& title = "", int width = 40) const;
     
     void printHeader(const std::string& title) const;
