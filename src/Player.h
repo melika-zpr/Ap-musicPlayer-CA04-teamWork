@@ -18,8 +18,6 @@ private:
 
     PlayerState state;
 
-    int currentPosition;   
-
     // Sound Implementation
     ma_engine engine;
     ma_sound sound;

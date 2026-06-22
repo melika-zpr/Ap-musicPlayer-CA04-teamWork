@@ -1,84 +1,75 @@
-#include <iostream>
-
-#include "Song.h"
-#include "Playlist.h"
 #include "Player.h"
+#include "Playlist.h"
+#include "Song.h"
+#include "CsvLoader.h"
+#include "M3uLoader.h"
+#include "MusicLibrary.h"
+#include <iostream>
+#include <thread>
+#include <chrono>
 
-int main()
-{
-    Song* song1 = new Song(
-        "Bohemian Rhapsody",
-        "Queen",
-        "A Night at the Opera",
-        "Rock",
-        1975,
-        354,
-        "queen.mp3"
-    );
+int main() {
+    using namespace std;
+    cout << "Creating MusicLibrary..." << endl;
+    MusicLibrary library;
 
-    Song* song2 = new Song(
-        "Numb",
-        "Linkin Park",
-        "Meteora",
-        "Rock",
-        2003,
-        187,
-        "numb.mp3"
-    );
+    cout << "Loading library from CSV..." << endl;
+    CsvLoader csvLoader;
+    if (!csvLoader.load("Data/library.csv", library)) {
+        cout << "Failed to load library from CSV" << endl;
+        return 1;
+    }
 
-    Song* song3 = new Song(
-        "Hotel California",
-        "Eagles",
-        "Hotel California",
-        "Rock",
-        1976,
-        390,
-        "hotel.mp3"
-    );
+    cout << "Loading playlists from M3U files..." << endl;
+    std::vector<Playlist> playlists;
+    std::vector<std::string> errors;
 
-    Playlist playlist("Favorites");
-    playlist.addSong(song1);
-    playlist.addSong(song2);
-    playlist.addSong(song3);
+    if (!M3uLoader::loadPlaylists("Data/Playlists", library, playlists, errors)) {
+        cout << "Failed to load playlists" << endl;
+        for (const auto& error : errors)
+            cout << error << endl;
+        return 1;
+    }
 
+    if (playlists.empty()) {
+        cout << "No playlists loaded from M3U files" << endl;
+        return 1;
+    }
+
+    cout << "Obtaining first loaded playlist..." << endl;
+    Playlist* playlist = &playlists.front();
+
+    cout << "Creating Player and loading playlist..." << endl;
     Player player;
-
-    if (!player.loadPlaylist(&playlist))
-    {
-        std::cout << "Failed to load playlist.\n";
-        return 0;
+    if (!player.loadPlaylist(playlist)) {
+        cout << "Failed to load playlist" << endl;
+        return 1;
     }
 
-    std::cout << "===== PLAY =====\n";
+    cout << "Calling play()..." << endl;
     player.play();
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    std::cout << "\n===== SEEK +30 =====\n";
-    player.seekForward(30);
-
-    std::cout << "\n===== PAUSE =====\n";
+    cout << "Calling pause()..." << endl;
     player.pause();
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    std::cout << "\n===== RESUME =====\n";
+    cout << "Calling resume()..." << endl;
     player.resume();
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    std::cout << "\n===== NEXT =====\n";
+    cout << "Calling next()..." << endl;
     player.next();
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    std::cout << "\n===== PREVIOUS =====\n";
+    cout << "Calling previous()..." << endl;
     player.previous();
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    std::cout << "\n===== TICK (5 sec) =====\n";
-    for (int i = 0; i < 5; i++)
-    {
-        player.tick();
-    }
-
-    std::cout << "\n===== STOP =====\n";
+    cout << "Calling stop()..." << endl;
     player.stop();
 
-    delete song1;
-    delete song2;
-    delete song3;
+    cout << "Integration test finished successfully." << endl;
 
     return 0;
 }

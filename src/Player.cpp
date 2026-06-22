@@ -5,13 +5,49 @@
 #include "miniaudio.h"
 
 Player::Player()
+    : currentPlaylist(nullptr),
+      currentIndex(0),
+      state(PlayerState::Stopped),
+      engineInitialized(false),
+      soundLoaded(false)
 {
-    currentPlaylist = nullptr;
-    currentIndex = 0;
+    ma_result result = ma_engine_init(nullptr, &engine);
+    if (result != MA_SUCCESS)
+    {
+        std::cerr << "Failed to initialize audio engine.\n";
+        return;
+    }
+    engineInitialized = true;
+}
 
-    state = PlayerState::Stopped;
+Player::~Player()
+{
+    if (soundLoaded)
+    {
+        ma_sound_uninit(&sound);
+        soundLoaded = false;
+    }
+    if (engineInitialized)
+    {
+        ma_engine_uninit(&engine);
+        engineInitialized = false;
+    }
+}
 
-    currentPosition = 0;
+static bool loadSound(ma_engine* engine,
+                      ma_sound* sound,
+                      const std::string& path)
+
+{
+
+    return ma_sound_init_from_file(
+               engine,
+               path.c_str(),
+               0,
+               nullptr,
+               nullptr,
+               sound) == MA_SUCCESS;
+
 }
 
 bool Player::loadPlaylist(Playlist* playlist)
@@ -19,10 +55,15 @@ bool Player::loadPlaylist(Playlist* playlist)
     if (playlist == nullptr || playlist->size() == 0)
         return false;
 
+    if (soundLoaded)
+    {
+        stop();
+        ma_sound_uninit(&sound);
+        soundLoaded = false;
+    }
+
     currentPlaylist = playlist;
     currentIndex = 0;
-
-    currentPosition = 0;
 
     state = PlayerState::Stopped;
 
@@ -39,36 +80,77 @@ Song* Player::getCurrentSong() const
 
 void Player::play()
 {
-    Song* song = getCurrentSong();
-
-    if (song == nullptr)
+    if (!currentPlaylist)
         return;
 
-    currentPosition = 0;
+    if (!engineInitialized)
+    return;
+
+    Song* song = getCurrentSong();
+
+    if (!song)
+        return;
+
+    if (soundLoaded)
+    {
+        ma_sound_uninit(&sound);
+        soundLoaded = false;
+    }
+
+    if (!loadSound(&engine, &sound, song->getFilePath()))
+    {
+        std::cerr << "Cannot load audio file.\n";
+        if (currentPlaylist && currentIndex + 1 < currentPlaylist->size())
+        {
+            ++currentIndex;
+            play();
+        }
+        return;
+    }
+
+    soundLoaded = true;
+
+    if (ma_sound_start(&sound) != MA_SUCCESS)
+    {
+        std::cerr << "Failed to start playback.\n";
+        ma_sound_uninit(&sound);
+        soundLoaded = false;
+        return;
+    }
 
     state = PlayerState::Playing;
-
-    std::cout << "Playing: "
-              << song->getTitle()
-              << std::endl;
 }
 
 void Player::pause()
 {
-    if (state == PlayerState::Playing)
-        state = PlayerState::Paused;
+    if (!soundLoaded)
+        return;
+
+    ma_sound_stop(&sound);
+
+    state = PlayerState::Paused;
 }
 
 void Player::resume()
 {
-    if (state == PlayerState::Paused)
-        state = PlayerState::Playing;
+    if (!soundLoaded)
+        return;
+
+    ma_sound_start(&sound);
+
+    state = PlayerState::Playing;
 }
 
 void Player::stop()
 {
+    if (!soundLoaded)
+        return;
+
+    ma_sound_stop(&sound);
+
+    ma_sound_seek_to_pcm_frame(&sound, 0);
+
     state = PlayerState::Stopped;
-    currentPosition = 0;
 }
 
 
@@ -100,12 +182,13 @@ void Player::previous()
 
 void Player::tick()
 {
+    if (!soundLoaded)
+        return;
+
     if (state != PlayerState::Playing)
         return;
 
-    currentPosition++;
-
-    if (currentPosition >= getCurrentSong()->getDurationSec())
+    if (ma_sound_at_end(&sound))
     {
         next();
     }
@@ -113,21 +196,53 @@ void Player::tick()
 
 void Player::seekForward(int seconds)
 {
-    Song* song = getCurrentSong();
-
-    if (song == nullptr)
+    if (!soundLoaded)
         return;
 
-    currentPosition += seconds;
+    ma_uint64 cursor;
+    ma_uint64 length;
 
-    if (currentPosition > song->getDurationSec())
-        currentPosition = song->getDurationSec();
+    ma_sound_get_cursor_in_pcm_frames(&sound, &cursor);
+    ma_sound_get_length_in_pcm_frames(&sound, &length);
+
+    ma_uint32 sampleRate = ma_engine_get_sample_rate(&engine);
+
+    ma_uint64 newFrame = cursor + static_cast<ma_uint64>(seconds) * sampleRate;
+
+    if (newFrame > length)
+        newFrame = length;
+
+    ma_sound_seek_to_pcm_frame(&sound, newFrame);
 }
 
 void Player::seekBackward(int seconds)
 {
-    currentPosition -= seconds;
+    if (!soundLoaded)
+        return;
 
-    if (currentPosition < 0)
-        currentPosition = 0;
+    ma_uint64 cursor;
+
+    ma_sound_get_cursor_in_pcm_frames(&sound, &cursor);
+
+    ma_uint32 sampleRate = ma_engine_get_sample_rate(&engine);
+
+    ma_int64 newFrame =
+        static_cast<ma_int64>(cursor) -
+        static_cast<ma_int64>(seconds) * sampleRate;
+
+    if (newFrame < 0)
+        newFrame = 0;
+
+    ma_sound_seek_to_pcm_frame(&sound, static_cast<ma_uint64>(newFrame));
+}
+
+int Player::getCurrentPosition() const
+{
+    if (!soundLoaded)
+        return 0;
+
+    ma_uint64 frames = 0;
+    ma_sound_get_cursor_in_pcm_frames(const_cast<ma_sound*>(&sound), &frames);
+
+    return static_cast<int>(frames / ma_engine_get_sample_rate(const_cast<ma_engine*>(&engine)));
 }
