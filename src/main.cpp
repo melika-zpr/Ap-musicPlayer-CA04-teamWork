@@ -1,125 +1,73 @@
+#include "UIRenderer.h"
+#include "InputHandler.h"
+
 #include <iostream>
-#include <thread>
-#include <chrono>
-
-#include "Player.h"
-#include "MusicLibrary.h"
-#include "CsvLoader.h"
-#include "M3uLoader.h"
-
-
-void print(Player& player)
-{
-    Song* s = player.getCurrentSong();
-
-    if(s)
-        std::cout
-        << "Current: "
-        << s->getTitle()
-        << std::endl;
-}
 
 
 int main()
 {
 
-    MusicLibrary library;
+    std::cout 
+    << "===== UIRenderer Test =====\n\n";
 
-    CsvLoader csv;
 
-    csv.load(
-        "Data/library.csv",
-        library
+    UIRenderer ui;
+
+
+    ui.clear();
+
+
+    ui.showTitle(
+        "Terminal Music Player"
     );
 
 
-    std::vector<Playlist> playlists;
-
-    std::vector<std::string> errors;
+    ui.line();
 
 
-    M3uLoader::loadPlaylists(
-        "Data/Playlists",
-        library,
-        playlists,
-        errors
+    ui.print(
+        "1. Now Playing"
+    );
+
+    ui.print(
+        "2. Playlists"
+    );
+
+    ui.print(
+        "3. Settings"
     );
 
 
-    Player player;
+    ui.line();
 
 
-    player.loadPlaylist(
-        &playlists[0]
+    std::cout
+    << "\n===== InputHandler Test =====\n\n";
+
+
+    InputHandler input;
+
+
+    ui.print(
+        "Enter menu number:"
     );
 
 
-    // =========================
-    // TEST NO_REPEAT
-    // =========================
-
-    std::cout<<"\nNO_REPEAT\n";
+    int choice =
+        input.getInt();
 
 
-    player.setPlaybackMode(
-        PlaybackMode::NO_REPEAT
+
+    std::cout
+    << "Selected: "
+    << choice
+    << std::endl;
+
+
+
+    ui.print(
+        "UI tools working successfully"
     );
-
-
-    print(player);
-
-
-    player.next();
-
-    print(player);
-
-
-
-    // =========================
-    // TEST REPEAT_ALL
-    // =========================
-
-
-    std::cout<<"\nREPEAT_ALL\n";
-
-
-    player.setPlaybackMode(
-        PlaybackMode::REPEAT_ALL
-    );
-
-
-    for(int i=0;i<10;i++)
-    {
-        player.next();
-
-        print(player);
-    }
-
-
-
-    // =========================
-    // TEST SHUFFLE
-    // =========================
-
-
-    std::cout<<"\nSHUFFLE\n";
-
-
-    player.setPlaybackMode(
-        PlaybackMode::SHUFFLE
-    );
-
-
-    for(int i=0;i<10;i++)
-    {
-
-        player.tick();
-
-        player.next();
-
-        print(player);
-
-    }
 
 
     return 0;
