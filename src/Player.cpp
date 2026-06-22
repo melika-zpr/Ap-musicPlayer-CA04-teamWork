@@ -2,12 +2,14 @@
 
 #include "Player.h"
 #include <iostream>
+#include <random>
 #include "miniaudio.h"
 
 Player::Player()
     : currentPlaylist(nullptr),
       currentIndex(0),
       state(PlayerState::Stopped),
+      playbackMode(PlaybackMode::NO_REPEAT),
       engineInitialized(false),
       soundLoaded(false)
 {
@@ -78,13 +80,23 @@ Song* Player::getCurrentSong() const
     return currentPlaylist->getSong(currentIndex);
 }
 
+void Player::setPlaybackMode(PlaybackMode mode)
+{
+    playbackMode = mode;
+}
+
+PlaybackMode Player::getPlaybackMode() const
+{
+    return playbackMode;
+}
+
 void Player::play()
 {
     if (!currentPlaylist)
         return;
 
     if (!engineInitialized)
-    return;
+        return;
 
     Song* song = getCurrentSong();
 
@@ -188,9 +200,49 @@ void Player::tick()
     if (state != PlayerState::Playing)
         return;
 
-    if (ma_sound_at_end(&sound))
+    if (!ma_sound_at_end(&sound))
+        return;
+
+    switch (playbackMode)
     {
-        next();
+    case PlaybackMode::NO_REPEAT:
+        if (currentIndex + 1 < currentPlaylist->size())
+        {
+            next();
+        }
+        else
+        {
+            stop();
+        }
+        break;
+
+    case PlaybackMode::REPEAT_ONE:
+        play();
+        break;
+
+    case PlaybackMode::REPEAT_ALL:
+        if (currentIndex + 1 < currentPlaylist->size())
+        {
+            next();
+        }
+        else
+        {
+            currentIndex = 0;
+            play();
+        }
+        break;
+
+    case PlaybackMode::SHUFFLE:
+    {
+        if (currentPlaylist->size() == 0)
+            return;
+
+        static std::mt19937 rng(std::random_device{}());
+        std::uniform_int_distribution<int> dist(0, currentPlaylist->size() - 1);
+        currentIndex = dist(rng);
+        play();
+        break;
+    }
     }
 }
 

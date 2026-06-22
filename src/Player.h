@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Playlist.h"
+#include "PlaybackMode.h"
 #include "miniaudio.h"
 
 enum class PlayerState
@@ -17,6 +18,7 @@ private:
     int currentIndex;
 
     PlayerState state;
+    PlaybackMode playbackMode;
 
     // Sound Implementation
     ma_engine engine;
@@ -47,6 +49,8 @@ public:
     Song* getCurrentSong() const;
 
     PlayerState getState() const;
+    void setPlaybackMode(PlaybackMode mode);
+    PlaybackMode getPlaybackMode() const;
 
     int getCurrentPosition() const;
     int getDuration() const;
