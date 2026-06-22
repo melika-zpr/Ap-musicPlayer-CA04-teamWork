@@ -1,5 +1,8 @@
+#define MINIAUDIO_IMPLEMENTATION
+
 #include "Player.h"
 #include <iostream>
+#include "miniaudio.h"
 
 Player::Player()
 {

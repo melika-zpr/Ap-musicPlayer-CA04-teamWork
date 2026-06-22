@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Playlist.h"
+#include "miniaudio.h"
 
 enum class PlayerState
 {
@@ -19,8 +20,16 @@ private:
 
     int currentPosition;   
 
+    // Sound Implementation
+    ma_engine engine;
+    ma_sound sound;
+
+    bool engineInitialized;
+    bool soundLoaded;
+
 public:
     Player();
+    ~Player();
 
     bool loadPlaylist(Playlist* playlist);
 
