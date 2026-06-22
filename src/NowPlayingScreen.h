@@ -1,25 +1,17 @@
 #pragma once
-
 #include "Screen.h"
 #include "UIRenderer.h"
-#include "InputHandler.h"
-#include "Player.h"
 
-class NowPlayingScreen : public Screen
-{
+class ScreenManager;
+
+class NowPlayingScreen : public Screen {
 private:
-    UIRenderer& renderer;
-    InputHandler& input;
-    Player& player;
+    ScreenManager* screenManager;
+    UIRenderer* uiRenderer;
 
 public:
-    NowPlayingScreen(
-        UIRenderer& renderer,
-        InputHandler& input,
-        Player& player
-    );
-
+    NowPlayingScreen(ScreenManager* sm, UIRenderer* ui);
+    
     void render() override;
-
     void handleInput() override;
 };

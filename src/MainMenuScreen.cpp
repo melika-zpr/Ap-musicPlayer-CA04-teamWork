@@ -2,10 +2,11 @@
 #include "ScreenManager.h"
 #include "SettingScreen.h"
 #include "PlaylistListScreen.h"
-
-#include <memory>
+#include "NowPlayingScreen.h"
+#include "BrowsePlaylistScreen.h"
 #include <iostream>
 #include <string>
+#include <memory>
 
 MainMenuScreen::MainMenuScreen(ScreenManager* sm, UIRenderer* ui)
     : screenManager(sm), uiRenderer(ui)
@@ -24,13 +25,13 @@ void MainMenuScreen::handleInput()
     std::cin >> choice;
 
     if (choice == "1") {
-        // TODO: رفتن به NowPlayingScreen
+        screenManager->setScreen(std::make_unique<NowPlayingScreen>(screenManager, uiRenderer));
     } 
     else if (choice == "2") {
         screenManager->setScreen(std::make_unique<PlaylistListScreen>(screenManager, uiRenderer));
     } 
     else if (choice == "3") {
-        // TODO: رفتن به BrowsePlaylistScreen
+        screenManager->setScreen(std::make_unique<BrowsePlaylistScreen>(screenManager, uiRenderer));
     } 
     else if (choice == "4") {
         screenManager->setScreen(std::make_unique<SettingScreen>(screenManager, uiRenderer));
@@ -40,7 +41,6 @@ void MainMenuScreen::handleInput()
         screenManager->setScreen(nullptr); 
     } 
     else {
-        // استفاده از توابع مدیریت خطای خودت
         uiRenderer->error("Invalid choice. Please try again.");
         uiRenderer->waitForEnter();
     }
