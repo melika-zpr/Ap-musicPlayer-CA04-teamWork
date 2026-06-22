@@ -1,12 +1,12 @@
 # 📁 Ap-musicPlayer-CA04-teamWork - Project Structure
 
-*Generated on: 6/22/2026, 11:40:12 PM*
+*Generated on: 6/23/2026, 1:34:01 AM*
 
 ## 📋 Quick Overview
 
 | Metric | Value |
 |--------|-------|
-| 📄 Total Files | 53 |
+| 📄 Total Files | 69 |
 | 📁 Total Folders | 4 |
 | 🌳 Max Depth | 2 levels |
 
@@ -19,29 +19,29 @@
 
 ### By File Type
 
-- 📄 **.mp3** (Other files): 20 files (37.7%)
-- 📄 **.h** (Other files): 11 files (20.8%)
-- 📄 **.cpp** (Other files): 10 files (18.9%)
-- 📄 **.m3u** (Other files): 4 files (7.5%)
-- 📄 **.** (Other files): 3 files (5.7%)
-- 🚫 **.gitignore** (Git ignore): 1 files (1.9%)
-- 📕 **.pdf** (PDF files): 1 files (1.9%)
-- 📄 **.csv** (Other files): 1 files (1.9%)
-- 📄 **.cfg** (Other files): 1 files (1.9%)
-- 📖 **.md** (Markdown files): 1 files (1.9%)
+- 📄 **.mp3** (Other files): 20 files (29.0%)
+- 📄 **.h** (Other files): 19 files (27.5%)
+- 📄 **.cpp** (Other files): 17 files (24.6%)
+- 📄 **.m3u** (Other files): 4 files (5.8%)
+- 📄 **.** (Other files): 3 files (4.3%)
+- 📖 **.md** (Markdown files): 2 files (2.9%)
+- 🚫 **.gitignore** (Git ignore): 1 files (1.4%)
+- 📕 **.pdf** (PDF files): 1 files (1.4%)
+- 📄 **.csv** (Other files): 1 files (1.4%)
+- 📄 **.cfg** (Other files): 1 files (1.4%)
 
 ### By Category
 
-- **Other**: 50 files (94.3%)
-- **Docs**: 2 files (3.8%)
-- **DevOps**: 1 files (1.9%)
+- **Other**: 65 files (94.2%)
+- **Docs**: 3 files (4.3%)
+- **DevOps**: 1 files (1.4%)
 
 ### 📁 Largest Directories
 
-- **root**: 53 files
+- **root**: 69 files
+- **src**: 36 files
 - **Data**: 27 files
 - **Data/Musics**: 21 files
-- **src**: 21 files
 - **Data/Playlists**: 4 files
 
 ## 🌳 Directory Structure
@@ -82,25 +82,41 @@ Ap-musicPlayer-CA04-teamWork/
 │   └── 📄 settings.cfg
 ├── 📄 Makefile
 ├── 📄 player
+├── 📖 project_structure.md
 ├── 🔴 📖 **README.md**
 └── 📁 src/
+│   ├── 📄 BrowsePlaylistScreen.cpp
+│   ├── 📄 BrowsePlaylistScreen.h
 │   ├── 📄 ConfigManager.cpp
 │   ├── 📄 ConfigManager.h
 │   ├── 📄 CsvLoader.cpp
 │   ├── 📄 CsvLoader.h
+│   ├── 📄 FilterScreen.cpp
+│   ├── 📄 FilterScreen.h
 │   ├── 📄 InputHandler.cpp
 │   ├── 📄 InputHandler.h
 │   ├── 📄 M3uLoader.cpp
 │   ├── 📄 M3uLoader.h
 │   ├── 📄 main.cpp
+│   ├── 📄 MainMenuScreen.cpp
+│   ├── 📄 MainMenuScreen.h
 │   ├── 📄 miniaudio.h
 │   ├── 📄 MusicLibrary.cpp
 │   ├── 📄 MusicLibrary.h
+│   ├── 📄 NowPlayingScreen.cpp
+│   ├── 📄 NowPlayingScreen.h
 │   ├── 📄 PlaybackMode.h
 │   ├── 📄 Player.cpp
 │   ├── 📄 Player.h
 │   ├── 📄 Playlist.cpp
 │   ├── 📄 Playlist.h
+│   ├── 📄 PlaylistListScreen.cpp
+│   ├── 📄 PlaylistListScreen.h
+│   ├── 📄 Screen.h
+│   ├── 📄 ScreenManager.cpp
+│   ├── 📄 ScreenManager.h
+│   ├── 📄 SettingScreen.cpp
+│   ├── 📄 SettingScreen.h
 │   ├── 📄 Song.cpp
 │   ├── 📄 Song.h
 │   ├── 📄 UIRenderer.cpp
