@@ -168,13 +168,85 @@ void Player::stop()
 
 void Player::next()
 {
-    if (currentPlaylist == nullptr)
+    if(currentPlaylist == nullptr)
         return;
 
-    if (currentIndex + 1 >= currentPlaylist->size())
-        return;
 
-    currentIndex++;
+    int size = currentPlaylist->size();
+
+
+    switch(playbackMode)
+    {
+
+    case PlaybackMode::SHUFFLE:
+    {
+        static std::mt19937 rng(
+            std::random_device{}()
+        );
+
+
+        std::uniform_int_distribution<int> dist(
+            0,
+            size - 1
+        );
+
+
+        int nextIndex;
+
+
+        do
+        {
+            nextIndex = dist(rng);
+
+        }
+        while(nextIndex == currentIndex && size > 1);
+
+
+
+        currentIndex = nextIndex;
+
+        break;
+    }
+
+
+
+    case PlaybackMode::REPEAT_ALL:
+
+        currentIndex++;
+
+
+        if(currentIndex >= size)
+            currentIndex = 0;
+
+
+        break;
+
+
+
+    case PlaybackMode::REPEAT_ONE:
+
+        // همان آهنگ
+        break;
+
+
+
+    case PlaybackMode::NO_REPEAT:
+
+
+        if(currentIndex + 1 >= size)
+        {
+            stop();
+            return;
+        }
+
+
+        currentIndex++;
+
+        break;
+
+    }
+
+
 
     play();
 }
@@ -193,6 +265,7 @@ void Player::previous()
 }
 
 void Player::tick()
+
 {
     if (!soundLoaded)
         return;
@@ -203,47 +276,12 @@ void Player::tick()
     if (!ma_sound_at_end(&sound))
         return;
 
-    switch (playbackMode)
+    if(playbackMode == PlaybackMode::REPEAT_ONE)
     {
-    case PlaybackMode::NO_REPEAT:
-        if (currentIndex + 1 < currentPlaylist->size())
-        {
-            next();
-        }
-        else
-        {
-            stop();
-        }
-        break;
-
-    case PlaybackMode::REPEAT_ONE:
         play();
-        break;
-
-    case PlaybackMode::REPEAT_ALL:
-        if (currentIndex + 1 < currentPlaylist->size())
-        {
-            next();
-        }
-        else
-        {
-            currentIndex = 0;
-            play();
-        }
-        break;
-
-    case PlaybackMode::SHUFFLE:
-    {
-        if (currentPlaylist->size() == 0)
-            return;
-
-        static std::mt19937 rng(std::random_device{}());
-        std::uniform_int_distribution<int> dist(0, currentPlaylist->size() - 1);
-        currentIndex = dist(rng);
-        play();
-        break;
+        return;
     }
-    }
+    next();
 }
 
 void Player::seekForward(int seconds)

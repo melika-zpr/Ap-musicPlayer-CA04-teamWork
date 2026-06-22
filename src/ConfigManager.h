@@ -2,13 +2,7 @@
 
 #include <string>
 #include <map>
-
-enum class PlaybackMode {
-    NO_REPEAT,
-    REPEAT_ONE,
-    REPEAT_ALL,
-    SHUFFLE
-};
+#include "PlaybackMode.h"
 
 class ConfigManager {
 public:
