@@ -17,9 +17,9 @@ void MusicLibrary::addSong(Song* song)
 
 Song* MusicLibrary::getSong(int index) const
 {
-    if (index < 0 || index >= songs.size())
+    if (index < 0 || index >= static_cast<int>(songs.size()))
         return nullptr;
-
+    
     return songs[index];
 }
 
