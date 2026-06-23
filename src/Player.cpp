@@ -221,25 +221,6 @@ void Player::previous()
     play();
 }
 
-void Player::update()
-{
-    if (state == PlayerState::Playing && soundLoaded)
-    {
-        if (ma_sound_at_end(&sound))
-        {
-            if (playbackMode == PlaybackMode::REPEAT_ONE)
-            {
-                ma_sound_seek_to_pcm_frame(&sound, 0);
-                ma_sound_start(&sound);
-            }
-            else
-            {
-                next();
-            }
-        }
-    }
-}
-
 void Player::tick()
 {
     if (!soundLoaded)
