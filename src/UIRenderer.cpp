@@ -242,38 +242,33 @@ void UIRenderer::printPlaylistList(const std::vector<Playlist> &playlists) const
         std::cout << "\u2500";
     std::cout << "\u2518" << std::endl;
 }
-void UIRenderer::printNowPlaying(const Song *song, float currentTime, float totalTime) const
+void UIRenderer::printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused) const
 {
-    (void)currentTime; // جلوگیری از وارنینگ کامپایلر
-
     clearScreen(); 
     std::cout << std::endl;
 
-    // کدهای رنگی ANSI برای استایل‌دهی سنترال
+    // کدهای رنگی ANSI
     const std::string RESET        = "\033[0m";
-    const std::string BORDER_BLUE  = "\033[38;5;111m"; // آبی مرزها
-    const std::string TEXT_WHITE   = "\033[97m";       // سفید درخشان
-    const std::string TEXT_GRAY    = "\033[38;5;244m"; // خاکستری لیبل‌ها
-    const std::string VALUE_GREEN  = "\033[38;5;114m"; // سبز عنوان آهنگ
-    const std::string SHIT_YELLOW  = "\033[38;5;215m"; // زرد وضعیت
-    const std::string DIM_FOOTER   = "\033[38;5;240m"; // خاکستری تیره راهنما
+    const std::string BORDER_BLUE  = "\033[38;5;111m"; 
+    const std::string TEXT_WHITE   = "\033[97m";       
+    const std::string TEXT_GRAY    = "\033[38;5;244m"; 
+    const std::string VALUE_GREEN  = "\033[38;5;114m"; 
+    const std::string SHIT_YELLOW  = "\033[38;5;215m"; 
+    const std::string DIM_FOOTER   = "\033[38;5;240m"; 
 
-    // بلوک‌های رنگی فقط برای سمت چپ (سمت راست کاملاً حذف شد)
     const std::string BAR_WHITE  = "\033[97m█\033[0m";
     const std::string BAR_GREEN  = "\033[38;5;114m█\033[0m";
     const std::string BAR_GRAY   = "\033[38;5;244m█\033[0m";
     const std::string BAR_YELLOW = "\033[38;5;215m█\033[0m";
 
-    const int INNER_WIDTH = 60; // عرض ثابت داخل باکس
+    const int INNER_WIDTH = 60; 
 
-    // تابع کمکی برای تکرار خطوط جدول
     auto repeatStr = [](const std::string& ch, int count) {
         std::string r;
         for (int i = 0; i < count; ++i) r += ch;
         return r;
     };
 
-    // تابع هوشمند برای محاسبه طول واقعی بصری (حذف افکت‌های ANSI و شمارش درست UTF-8)
     auto visual_len = [](const std::string& str) {
         int len = 0;
         bool in_ansi = false;
@@ -286,14 +281,12 @@ void UIRenderer::printNowPlaying(const Song *song, float currentTime, float tota
                 if (std::isalpha(str[i])) in_ansi = false;
                 continue;
             }
-            // شمارش بایت‌های اصلی UTF-8
             unsigned char c = str[i];
             if ((c & 0xC0) != 0x80) len++;
         }
         return len;
     };
 
-    // همرنگ‌ساز و ترازکننده خودکار دیواره سمت راست جدول
     auto printLine = [&](const std::string& content) {
         int current_vis_len = visual_len(content);
         int padding = INNER_WIDTH - current_vis_len;
@@ -311,78 +304,66 @@ void UIRenderer::printNowPlaying(const Song *song, float currentTime, float tota
         return;
     }
 
-    // 1. هدر اصلی بازیکن
+    // 1. هدر اصلی
     std::cout << BORDER_BLUE << "  ╔" << repeatStr("═", INNER_WIDTH) << "╗" << RESET << std::endl;
-    
     std::string headerText = "♫  Terminal Music Player  ♫";
     int headPad = (INNER_WIDTH - visual_len(headerText)) / 2;
-    std::string headerContent = std::string(headPad, ' ') + TEXT_WHITE + headerText;
-    printLine(headerContent);
+    printLine(std::string(headPad, ' ') + TEXT_WHITE + headerText);
 
-    // 2. بخش جزئیات آهنگ (Now Playing)
+    // 2. اطلاعات آهنگ
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
-
-    // ردیف Now Playing
     printLine(" " + BAR_WHITE + " " + TEXT_WHITE + "Now Playing");
 
-    // ردیف Title (سبز)
     std::string titleVal = truncate(song->getTitle(), 42);
     printLine(" " + BAR_GREEN + TEXT_GRAY + " Title  : " + VALUE_GREEN + titleVal);
 
-    // ردیف Artist
     std::string artistVal = truncate(song->getArtist(), 42);
     printLine(" " + BAR_GRAY + TEXT_GRAY + " Artist : " + TEXT_WHITE + artistVal);
 
-    // ردیف Album + Year (تراز شده در راست)
     std::string albumVal = truncate(song->getAlbum(), 32);
     std::string yearVal = "[1975]"; 
     std::string albumLeft = " " + BAR_GRAY + TEXT_GRAY + " Album  : " + TEXT_GRAY + albumVal;
     int albumSpaces = INNER_WIDTH - visual_len(albumLeft) - visual_len(yearVal) - 1;
-    std::string albumContent = albumLeft + std::string(albumSpaces > 0 ? albumSpaces : 0, ' ') + TEXT_GRAY + yearVal + " ";
-    printLine(albumContent);
+    printLine(albumLeft + std::string(albumSpaces > 0 ? albumSpaces : 0, ' ') + TEXT_GRAY + yearVal + " ");
 
-    // ردیف Genre
     std::string genreVal = "Rock"; 
     printLine(" " + BAR_GRAY + TEXT_GRAY + " Genre  : " + TEXT_GRAY + genreVal);
 
-    // 3. بخش وضعیت پخش (Playing Status)
+    // 3. وضعیت پخش (تغییر دینامیک بر اساس وضعیت پلیر)
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
 
-    // ردیف وضعیت + نام پلی‌لیست
-    std::string statusVal = "▶  PLAYING";
+    // تشخیص وضعیت PLAYING یا PAUSED
+    std::string statusVal = isPaused ? "⏸  PAUSED " : "▶  PLAYING";
     std::string playlistVal = "Playlist: rock_hits"; 
     std::string statusLeft = " " + BAR_YELLOW + " " + SHIT_YELLOW + statusVal;
     int statusSpaces = INNER_WIDTH - visual_len(statusLeft) - visual_len(playlistVal) - 1;
-    std::string statusContent = statusLeft + std::string(statusSpaces > 0 ? statusSpaces : 0, ' ') + SHIT_YELLOW + playlistVal + " ";
-    printLine(statusContent);
+    printLine(statusLeft + std::string(statusSpaces > 0 ? statusSpaces : 0, ' ') + SHIT_YELLOW + playlistVal + " ");
 
-    // ردیف Mode + Duration واقعی
+    // نمایش زمان واقعی سپری شده / زمان کل آهنگ
     std::string modeVal = "Mode: SHUFFLE";
+    int curMin = static_cast<int>(currentTime) / 60;
+    int curSec = static_cast<int>(currentTime) % 60;
     int totMin = static_cast<int>(totalTime) / 60;
     int totSec = static_cast<int>(totalTime) % 60;
-    char durationBuf[32];
-    snprintf(durationBuf, sizeof(durationBuf), "Duration: %02d:%02d", totMin, totSec);
-    std::string durationStr = durationBuf;
+    char timeBuf[64];
+    snprintf(timeBuf, sizeof(timeBuf), "Time: %02d:%02d / %02d:%02d", curMin, curSec, totMin, totSec);
+    std::string timeStr = timeBuf;
 
     std::string modeLeft = " " + BAR_YELLOW + " " + TEXT_GRAY + modeVal;
-    int modeSpaces = INNER_WIDTH - visual_len(modeLeft) - visual_len(durationStr) - 1;
-    std::string modeContent = modeLeft + std::string(modeSpaces > 0 ? modeSpaces : 0, ' ') + TEXT_GRAY + durationStr + " ";
-    printLine(modeContent);
+    int modeSpaces = INNER_WIDTH - visual_len(modeLeft) - visual_len(timeStr) - 1;
+    printLine(modeLeft + std::string(modeSpaces > 0 ? modeSpaces : 0, ' ') + TEXT_GRAY + timeStr + " ");
 
-    // 4. فوتر میانبرها (تراز شده دو خطی برای جا شدن f و r)
+    // 4. فوتر دکمه‌ها
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
 
     std::string foot1 = "[p] play/pause  [s] stop  [n] next  [b] prev";
     int f1Pad = (INNER_WIDTH - visual_len(foot1)) / 2;
-    std::string foot1Content = std::string(f1Pad, ' ') + DIM_FOOTER + foot1;
-    printLine(foot1Content);
+    printLine(std::string(f1Pad, ' ') + DIM_FOOTER + foot1);
 
     std::string foot2 = "[f] fwd 10s   [r] bwd 10s   [q] menu";
     int f2Pad = (INNER_WIDTH - visual_len(foot2)) / 2;
-    std::string foot2Content = std::string(f2Pad, ' ') + DIM_FOOTER + foot2;
-    printLine(foot2Content);
+    printLine(std::string(f2Pad, ' ') + DIM_FOOTER + foot2);
 
-    // بستن باکس
     std::cout << BORDER_BLUE << "  ╚" << repeatStr("═", INNER_WIDTH) << "╝" << RESET << std::endl;
 }
 

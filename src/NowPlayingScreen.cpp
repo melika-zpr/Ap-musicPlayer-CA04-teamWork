@@ -22,7 +22,7 @@ void NowPlayingScreen::render() {
         float currentTime = static_cast<float>(player_->getCurrentPosition());
         float totalTime = static_cast<float>(currentSong->getDurationSec());
         
-        ui_->printNowPlaying(currentSong, currentTime, totalTime);
+        ui_->printNowPlaying(currentSong, currentTime, totalTime, player_->getState() == PlayerState::Paused);
         
         std::string status;
         switch (player_->getState()) {
