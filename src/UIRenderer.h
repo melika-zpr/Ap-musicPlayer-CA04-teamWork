@@ -15,6 +15,12 @@ public:
     int songCount;
     bool isActive;
     };
+
+    struct TrackInfo {
+    std::string title;
+    std::string artist;
+    bool isCurrent; // آیا این آهنگ هم‌اکنون در حال پخش است؟
+    };
     
     void clearScreen() const;
     
@@ -38,6 +44,8 @@ public:
     void printMainMenu(const std::string& lastPlayedSong) const;
     void printSettings(const std::string& currentMode) const;
     void printPlaylistList(const std::vector<std::string>& playlistNames) const;
+    void printPlaylistView(const std::string& playlistName, const std::vector<TrackInfo>& tracks) const;
+    void printSettingsView(const std::string& currentModeStr) const;
     
 private:
     std::string formatDuration(int seconds) const;

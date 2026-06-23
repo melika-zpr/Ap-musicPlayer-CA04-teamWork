@@ -3,25 +3,27 @@
 #include "ConfigManager.h"
 #include "UIRenderer.h"
 #include "InputHandler.h"
+#include <string>
 
 void SettingsScreen::render() {
-    ui_->printHeader("Settings");
-    
     if (config_ == nullptr) {
-        ui_->printError("ConfigManager not initialized!");
+        // استفاده از باکس خطای رندرر به جای چاپ ساده متنی
+        ui_->printMessage("  Error: ConfigManager not initialized!");
         return;
     }
     
+    // گرفتن حالت پخش فعلی به صورت رشته (مثل "Shuffle" یا "Repeat One")
     PlaybackMode currentMode = config_->getPlaybackMode();
-    ui_->printSettings(ConfigManager::modeToString(currentMode));
-    ui_->printMessage("");
-    ui_->printMessage("  0. Back (changes saved automatically)");
-    ui_->printMessage("");
+    std::string currentModeStr = ConfigManager::modeToString(currentMode);
+    
+    // ارسال به رندرر باکس‌ساز جدید
+    ui_->printSettingsView(currentModeStr);
 }
 
 ScreenType SettingsScreen::handleInput() {
     if (config_ == nullptr) return ScreenType::SETTINGS;
     
+    // دریافت انتخاب کاربر بدون چاپ متن اضافه (چون پرامپت را خود باکس چاپ کرده است)
     int choice = input_->getIntChoice("", 0, 4);
     
     if (choice == 0) {
@@ -38,12 +40,14 @@ ScreenType SettingsScreen::handleInput() {
         default: return ScreenType::SETTINGS;
     }
     
+    // اعمال تنظیمات جدید روی کانفیگ و ذخیره‌سازی آن
     config_->setPlaybackMode(newMode);
     config_->save();
     
+    // اعمال همزمان روی موتور پلیر
     if (player_ != nullptr) {
         player_->setPlaybackMode(newMode);
     }
     
-    return ScreenType::SETTINGS;
+    return ScreenType::SETTINGS; // ماندن در صفحه تنظیمات جهت مشاهده آپدیت تیک سبز رنگ گزینه‌ها
 }
