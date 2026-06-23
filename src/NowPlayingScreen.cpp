@@ -1,51 +1,42 @@
 #include "NowPlayingScreen.h"
 #include "Player.h"
 #include "Song.h"
+#include "Playlist.h"
+#include "ConfigManager.h"
 #include "UIRenderer.h"
 #include "InputHandler.h"
 
 void NowPlayingScreen::render() {
-    ui_->printHeader("Now Playing");
-    
     if (player_ == nullptr) {
-        ui_->printError("Player not initialized!");
+        ui_->printMessage("  Error: Player not initialized.");
         return;
     }
-    
+
     Song* currentSong = player_->getCurrentSong();
+    
+    // اگر آهنگی در حال پخش نیست
     if (currentSong == nullptr) {
-        ui_->printMessage("  No song is currently playing.");
-        ui_->printMessage("");
-        ui_->printMessage("  Select a playlist and press play.");
-        ui_->printMessage("");
+        ui_->printNowPlaying(nullptr, 0.0f, 0.0f, true); 
     } else {
+        // محاسبه زمان‌ها بر اساس متدهایی که در کد قبلی داشتی
         float currentTime = static_cast<float>(player_->getCurrentPosition());
         float totalTime = static_cast<float>(currentSong->getDurationSec());
+        bool isPaused = (player_->getState() == PlayerState::Paused);
         
-        ui_->printNowPlaying(currentSong, currentTime, totalTime, player_->getState() == PlayerState::Paused);
-        
-        std::string status;
-        switch (player_->getState()) {
-            case PlayerState::Playing: status = "▶ Playing"; break;
-            case PlayerState::Paused:  status = "⏸ Paused"; break;
-            case PlayerState::Stopped: status = "⏹ Stopped"; break;
-        }
-        ui_->printMessage("  Status: " + status);
-        ui_->printMessage("");
+        // ارسال دقیق ۴ آرگومان مورد نیاز به رندرر
+        ui_->printNowPlaying(currentSong, currentTime, totalTime, isPaused);
     }
-    
-    ui_->drawHorizontalLine("-", 50);
-    ui_->printMessage("  [p] Play/Pause/Resume  [s] Stop  [n] Next  [b] Previous");
-    ui_->printMessage("  [f] Forward 10s        [r] Backward 10s  [q] Back to Menu");
-    ui_->drawHorizontalLine("-", 50);
 }
 
 ScreenType NowPlayingScreen::handleInput() {
+    if (player_ == nullptr) return ScreenType::MAIN_MENU;
+
     char key = input_->getCharKey("");
-    if (player_ == nullptr) return ScreenType::NOW_PLAYING;
-    
+
     switch (key) {
         case 'p':
+        case 'P':
+            // استفاده از منطق صحیح وضعیت پخش که در کد قبلی داشتی
             if (player_->getState() == PlayerState::Playing) {
                 player_->pause();
             } else if (player_->getState() == PlayerState::Paused) {
@@ -54,25 +45,39 @@ ScreenType NowPlayingScreen::handleInput() {
                 player_->play();
             }
             break;
+
         case 's':
+        case 'S':
             player_->stop();
             break;
+
         case 'n':
+        case 'N':
             player_->next();
             break;
+
         case 'b':
+        case 'B':
             player_->previous();
             break;
+
         case 'f':
-            player_->seekForward(10);
+        case 'F':
+            player_->seekForward(10); // اصلاح نام متد بر اساس کدهای قبلی شما
             break;
+
         case 'r':
-            player_->seekBackward(10);
+        case 'R':
+            player_->seekBackward(10); // اصلاح نام متد بر اساس کدهای قبلی شما
             break;
+
         case 'q':
+        case 'Q':
             return ScreenType::MAIN_MENU;
+
         default:
             break;
     }
+
     return ScreenType::NOW_PLAYING;
 }
