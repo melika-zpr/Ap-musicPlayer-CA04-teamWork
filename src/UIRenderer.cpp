@@ -184,64 +184,6 @@ void UIRenderer::printSongList(const std::vector<Song *> &songs, int maxDisplay)
     std::cout << "\u2518" << std::endl;
 }
 
-void UIRenderer::printPlaylistList(const std::vector<Playlist> &playlists) const
-{
-    if (playlists.empty())
-    {
-        printMessage("  No playlists available.");
-        return;
-    }
-
-    const int idWidth = 5;
-    const int nameWidth = 30;
-    const int countWidth = 15;
-
-    std::cout << "  \u250C";
-    for (int i = 0; i < idWidth; ++i)
-        std::cout << "\u2500";
-    std::cout << "\u252C";
-    for (int i = 0; i < nameWidth; ++i)
-        std::cout << "\u2500";
-    std::cout << "\u252C";
-    for (int i = 0; i < countWidth; ++i)
-        std::cout << "\u2500";
-    std::cout << "\u2510" << std::endl;
-
-    std::cout << "  \u2502"
-              << std::left << std::setfill(' ') << std::setw(idWidth) << "  #" << "\u2502"
-              << std::setw(nameWidth) << " Playlist Name" << "\u2502"
-              << std::setw(countWidth) << " Total Songs" << "\u2502" << std::endl;
-
-    std::cout << "  \u251C";
-    for (int i = 0; i < idWidth; ++i)
-        std::cout << "\u2500";
-    std::cout << "\u253C";
-    for (int i = 0; i < nameWidth; ++i)
-        std::cout << "\u2500";
-    std::cout << "\u253C";
-    for (int i = 0; i < countWidth; ++i)
-        std::cout << "\u2500";
-    std::cout << "\u2524" << std::endl;
-
-    for (size_t i = 0; i < playlists.size(); ++i)
-    {
-        std::cout << "  \u2502"
-                  << std::right << std::setw(idWidth - 2) << (i + 1) << "  \u2502"
-                  << std::left << std::setw(nameWidth) << (" " + truncate(playlists[i].getName(), nameWidth - 2)) << "\u2502"
-                  << std::right << std::setw(countWidth - 3) << playlists[i].size() << "   \u2502" << std::endl;
-    }
-
-    std::cout << "  \u2514";
-    for (int i = 0; i < idWidth; ++i)
-        std::cout << "\u2500";
-    std::cout << "\u2534";
-    for (int i = 0; i < nameWidth; ++i)
-        std::cout << "\u2500";
-    std::cout << "\u2534";
-    for (int i = 0; i < countWidth; ++i)
-        std::cout << "\u2500";
-    std::cout << "\u2518" << std::endl;
-}
 void UIRenderer::printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused) const
 {
     clearScreen(); 
@@ -402,6 +344,120 @@ std::string UIRenderer::truncate(const std::string &str, size_t maxLen) const
         return str;
     }
     return str.substr(0, maxLen - 3) + "...";
+}
+
+void UIRenderer::printPlaylistList(const std::vector<PlaylistInfo>& playlists) const
+{
+    clearScreen(); 
+    std::cout << std::endl;
+
+    // کدهای رنگی ANSI
+    const std::string RESET        = "\033[0m";
+    const std::string BORDER_BLUE  = "\033[38;5;111m"; 
+    const std::string TEXT_WHITE   = "\033[97m";       
+    const std::string TEXT_GRAY    = "\033[38;5;244m"; 
+    const std::string OPTION_NUM   = "\033[38;5;220m"; // زرد طلایی برای پلی‌لیست فعال
+
+    const int INNER_WIDTH = 60; 
+
+    auto repeatStr = [](const std::string& ch, int count) {
+        std::string r;
+        for (int i = 0; i < count; ++i) r += ch;
+        return r;
+    };
+
+    auto visual_len = [](const std::string& str) {
+        int len = 0;
+        bool in_ansi = false;
+        for (size_t i = 0; i < str.length(); ++i) {
+            if (str[i] == '\033') { in_ansi = true; continue; }
+            if (in_ansi) { if (std::isalpha(str[i])) in_ansi = false; continue; }
+            unsigned char c = str[i];
+            if ((c & 0xC0) != 0x80) len++;
+        }
+        return len;
+    };
+
+    auto printLine = [&](const std::string& content) {
+        int current_vis_len = visual_len(content);
+        int padding = INNER_WIDTH - current_vis_len;
+        std::cout << BORDER_BLUE << "  ║" << RESET << content;
+        if (padding > 0) std::cout << std::string(padding, ' ');
+        std::cout << BORDER_BLUE << "║" << RESET << std::endl;
+    };
+
+    // ۱. سقف جدول و هدر اصلی
+    std::cout << BORDER_BLUE << "  ╔" << repeatStr("═", INNER_WIDTH) << "╗" << RESET << std::endl;
+    std::string titleText = "Playlists";
+    int titlePad = (INNER_WIDTH - visual_len(titleText)) / 2;
+    printLine(std::string(titlePad, ' ') + TEXT_WHITE + titleText);
+    std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
+
+    // ۲. هدر ستون‌های جدول (تراز ستون Songs در سمت راست)
+    std::string colHeader = "  #   Name";
+    std::string colSongs = "Songs";
+    int colSpaces = INNER_WIDTH - visual_len(colHeader) - visual_len(colSongs) - 4;
+    printLine(colHeader + std::string(colSpaces > 0 ? colSpaces : 0, ' ') + colSongs + "    ");
+    std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
+
+    // ۳. رندر کردن دینامیک سطرها با استایل عکس ارسالی
+    if (playlists.empty()) {
+        printLine("");
+        std::string emptyMsg = "No playlists available.";
+        int emptyPad = (INNER_WIDTH - visual_len(emptyMsg)) / 2;
+        printLine(std::string(emptyPad, ' ') + TEXT_GRAY + emptyMsg);
+        printLine("");
+    } else {
+        for (size_t i = 0; i < playlists.size(); ++i) {
+            const auto& pl = playlists[i];
+            
+            // انتخاب رنگ بر اساس فعال بودن یا نبودن پلی‌لیست
+            std::string rowColor = pl.isActive ? OPTION_NUM : TEXT_GRAY;
+            
+            // قالب‌بندی بخش چپ: شماره و نام پلی‌لیست
+            std::string idxStr = std::to_string(i + 1);
+            std::string nameStr = truncate(pl.name, 30);
+            std::string leftPart = "  " + idxStr + "   " + nameStr;
+            
+            // پدینگ ثابت برای تضمین تراز شدن ستون سمت راست (عرض بخش چپ و میانی = ۴۰ کاراکتر)
+            int leftVis = visual_len(leftPart);
+            if (leftVis < 40) {
+                leftPart += std::string(40 - leftVis, ' ');
+            }
+            
+            // قالب‌بندی بخش راست: آیکون پخش، تعداد آهنگ و کلمه [active]
+            std::string rightPart = "";
+            if (pl.isActive) {
+                char countBuf[32];
+                snprintf(countBuf, sizeof(countBuf), "▶  %2d   [active]", pl.songCount);
+                rightPart = countBuf;
+            } else {
+                char countBuf[32];
+                snprintf(countBuf, sizeof(countBuf), "    %2d", pl.songCount);
+                rightPart = countBuf;
+            }
+            
+            // پدینگ انتهایی برای چسبیدن به دیواره سمت راست
+            std::string fullRow = rowColor + leftPart + rightPart;
+            int totalVis = visual_len(fullRow);
+            int finalPadding = INNER_WIDTH - totalVis - 4; // ۴ کاراکتر فاصله امن از مارجین راست
+            
+            printLine(rowColor + leftPart + rightPart + std::string(finalPadding > 0 ? finalPadding : 0, ' '));
+        }
+    }
+
+    // ۴. فوتر راهنما (بخش پایین جدول)
+    std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
+    std::string footLeft = "  Enter number to switch active playlist.";
+    std::string footRight = "[0] back  ";
+    int footSpaces = INNER_WIDTH - visual_len(footLeft) - visual_len(footRight);
+    printLine(TEXT_GRAY + footLeft + std::string(footSpaces > 0 ? footSpaces : 0, ' ') + footRight);
+
+    // ۵. کف جدول
+    std::cout << BORDER_BLUE << "  ╚" << repeatStr("═", INNER_WIDTH) << "╝" << RESET << std::endl;
+
+    // پرامپت انتخاب سطر در بیرون باکس
+    std::cout << std::endl << TEXT_WHITE << "Choice: " << RESET;
 }
 
 void UIRenderer::printMainMenu(const std::string& lastPlayedSong) const

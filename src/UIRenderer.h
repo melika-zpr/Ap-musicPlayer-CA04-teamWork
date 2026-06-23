@@ -9,6 +9,12 @@ class Playlist;
 class UIRenderer {
 public:
     UIRenderer() = default;
+
+    struct PlaylistInfo {
+    std::string name;
+    int songCount;
+    bool isActive;
+    };
     
     void clearScreen() const;
     
@@ -26,11 +32,12 @@ public:
     void printSongList(const std::vector<Song*>& songs, 
                        int maxDisplay = 20) const;
     
-    void printPlaylistList(const std::vector<Playlist>& playlists) const;
+    void printPlaylistList(const std::vector<PlaylistInfo>& playlists) const;
     
     void printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused) const;
     void printMainMenu(const std::string& lastPlayedSong) const;
     void printSettings(const std::string& currentMode) const;
+    void printPlaylistList(const std::vector<std::string>& playlistNames) const;
     
 private:
     std::string formatDuration(int seconds) const;
