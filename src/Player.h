@@ -45,7 +45,6 @@ public:
     void pause();
     void resume();
     void stop();
-    void update();
 
     void next();
     void previous();
