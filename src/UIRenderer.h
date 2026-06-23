@@ -29,7 +29,7 @@ public:
     void printPlaylistList(const std::vector<Playlist>& playlists) const;
     
     void printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused) const;
-    
+    void printMainMenu(const std::string& lastPlayedSong) const;
     void printSettings(const std::string& currentMode) const;
     
 private:

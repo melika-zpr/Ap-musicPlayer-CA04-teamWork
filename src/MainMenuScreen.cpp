@@ -4,34 +4,27 @@
 #include "ConfigManager.h"
 #include "UIRenderer.h"
 #include "InputHandler.h"
-#include "ConfigManager.h" 
 #include <vector>
 #include <string>
 
 void MainMenuScreen::render() {
-    ui_->printHeader("Main Menu");
-    ui_->printMessage("  1. Now Playing");
-    ui_->printMessage("  2. View Playlists");
-    ui_->printMessage("  3. Current Playlist Tracks");
-    ui_->printMessage("  4. Settings");
-    ui_->printMessage("  0. Exit Application");
-    ui_->drawHorizontalLine("-", 50);
-    displayLastPlayed();
-    ui_->drawHorizontalLine("-", 50);
-    ui_->printMessage("Enter option: ");
+    // ۱. ابتدا نام آخرین آهنگ پخش شده را از کانفیگ می‌گیریم
+    std::string lastSong = "";
+    if (config_ != nullptr) {
+        lastSong = config_->getLastSong();
+    }
+    
+    // ۲. حالا کل باکس منو را به صورت کاملاً تراز شده و رنگی رندر می‌کنیم
+    ui_->printMainMenu(lastSong);
 }
 
 void MainMenuScreen::displayLastPlayed() const {
-    if (config_ == nullptr) return;
-    
-    std::string lastSong = config_->getLastSong();
-    if (!lastSong.empty()) {
-        ui_->printMessage("  Last played: " + lastSong);
-        ui_->printMessage("");
-    }
+    // این متد دیگر نیازی به چاپ چیزی ندارد، چون وظیفه آن را متد printMainMenu به بهترین شکل انجام می‌دهد.
+    // می‌توانید بدنه آن را خالی بگذارید یا در صورت تمایل آن را از فایل هدر و اینجا کاملاً حذف کنید.
 }
 
 ScreenType MainMenuScreen::handleInput() {
+    // دریافت انتخاب کاربر (بدون چاپ پرامپت تکراری، چون در printMainMenu چاپ شده است)
     int choice = input_->getIntChoice("", 0, 4);
     
     switch (choice) {

@@ -403,3 +403,92 @@ std::string UIRenderer::truncate(const std::string &str, size_t maxLen) const
     }
     return str.substr(0, maxLen - 3) + "...";
 }
+
+void UIRenderer::printMainMenu(const std::string& lastPlayedSong) const
+{
+    clearScreen(); 
+    std::cout << std::endl;
+
+    // کدهای رنگی ANSI (کاملاً هماهنگ با صفحه پخش)
+    const std::string RESET        = "\033[0m";
+    const std::string BORDER_BLUE  = "\033[38;5;111m"; // آبی مرزها
+    const std::string TEXT_WHITE   = "\033[97m";       // سفید درخشان
+    const std::string TEXT_GRAY    = "\033[38;5;244m"; // خاکستری نوشته‌ها
+    const std::string VALUE_GREEN  = "\033[38;5;114m"; // سبز برای نام آهنگ
+    const std::string OPTION_NUM   = "\033[38;5;220m"; // زرد طلایی برای شماره گزینه‌ها
+
+    const int INNER_WIDTH = 60; // حفظ عرض ثابت ۶۰ تایی برای هماهنگی کامل با کل برنامه
+
+    // تابع کمکی تکرار کاراکتر
+    auto repeatStr = [](const std::string& ch, int count) {
+        std::string r;
+        for (int i = 0; i < count; ++i) r += ch;
+        return r;
+    };
+
+    // تابع جادویی محاسبه طول واقعی بصری
+    auto visual_len = [](const std::string& str) {
+        int len = 0;
+        bool in_ansi = false;
+        for (size_t i = 0; i < str.length(); ++i) {
+            if (str[i] == '\033') {
+                in_ansi = true;
+                continue;
+            }
+            if (in_ansi) {
+                if (std::isalpha(str[i])) in_ansi = false;
+                continue;
+            }
+            unsigned char c = str[i];
+            if ((c & 0xC0) != 0x80) len++;
+        }
+        return len;
+    };
+
+    // تابع چاپ خطوط صاف و تراز شده
+    auto printLine = [&](const std::string& content) {
+        int current_vis_len = visual_len(content);
+        int padding = INNER_WIDTH - current_vis_len;
+        std::cout << BORDER_BLUE << "  ║" << RESET << content;
+        if (padding > 0) {
+            std::cout << std::string(padding, ' ');
+        }
+        std::cout << BORDER_BLUE << "║" << RESET << std::endl;
+    };
+
+    // ۱. سقف جدول و هدر منو
+    std::cout << BORDER_BLUE << "  ╔" << repeatStr("═", INNER_WIDTH) << "╗" << RESET << std::endl;
+    
+    std::string menuTitle = "Main Menu";
+    int titlePad = (INNER_WIDTH - visual_len(menuTitle)) / 2;
+    printLine(std::string(titlePad, ' ') + TEXT_WHITE + menuTitle);
+    
+    std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
+
+    // فاصله داخلی برای زیبایی
+    printLine("");
+
+    // ۲. آیتم‌های منو (استایل‌دهی شده با زرد طلایی برای شماره‌ها)
+    printLine("   " + OPTION_NUM + "1." + RESET + " Now Playing");
+    printLine("   " + OPTION_NUM + "2." + RESET + " View Playlists");
+    printLine("   " + OPTION_NUM + "3." + RESET + " Current Playlist Tracks");
+    printLine("   " + OPTION_NUM + "4." + RESET + " Settings");
+    
+    printLine(""); // فاصله بین گزینه‌ها و کلید خروج
+    printLine("   " + OPTION_NUM + "0." + RESET + " Exit Application");
+    
+    printLine("");
+
+    // ۳. بخش آهنگ قبلی (Last Played) داخل خود باکس
+    std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
+    
+    // اگر آهنگی پخش نشده بود کلمه None و در غیر این صورت نام آهنگ (کات شده تا حداکثر ۴۴ کاراکتر برای جا شدن) نمایش داده می‌شود
+    std::string displaySong = lastPlayedSong.empty() ? "None" : truncate(lastPlayedSong, 44);
+    printLine("  " + TEXT_GRAY + "Last played: " + VALUE_GREEN + displaySong);
+
+    // ۴. کف جدول
+    std::cout << BORDER_BLUE << "  ╚" << repeatStr("═", INNER_WIDTH) << "╝" << RESET << std::endl;
+
+    // محل دریافت ورودی (پرامپت اصلی) در زیر جدول با فاصله مناسب
+    std::cout << std::endl << "  " << TEXT_WHITE << "Enter option: " << RESET;
+}
