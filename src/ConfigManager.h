@@ -22,6 +22,7 @@ public:
     
     static std::string modeToString(PlaybackMode mode);
     static PlaybackMode stringToMode(const std::string& str);
+    static std::string modeToDisplayString(PlaybackMode mode);
     
 private:
     std::string configPath_;

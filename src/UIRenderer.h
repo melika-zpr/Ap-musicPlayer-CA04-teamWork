@@ -1,3 +1,5 @@
+// UIRenderer.h
+
 #pragma once
 
 #include <string>
@@ -9,6 +11,18 @@ class Playlist;
 class UIRenderer {
 public:
     UIRenderer() = default;
+
+    struct PlaylistInfo {
+    std::string name;
+    int songCount;
+    bool isActive;
+    };
+
+    struct TrackInfo {
+    std::string title;
+    std::string artist;
+    bool isCurrent; // آیا این آهنگ هم‌اکنون در حال پخش است؟
+    };
     
     void clearScreen() const;
     
@@ -26,12 +40,13 @@ public:
     void printSongList(const std::vector<Song*>& songs, 
                        int maxDisplay = 20) const;
     
-    void printPlaylistList(const std::vector<Playlist>& playlists) const;
+    void printPlaylistList(const std::vector<PlaylistInfo>& playlists) const;
     
-    void printNowPlaying(const Song* song, float currentTime, float totalTime) const;
-    
-    void printSettings(const std::string& currentMode) const;
-    
+    void printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused, const std::string& mode, const std::string& playlistName) const;    void printSettings(const std::string& currentMode) const;
+    void printPlaylistView(const std::string& playlistName, const std::vector<TrackInfo>& tracks) const;
+    void printSettingsView(const std::string& currentModeStr) const;
+    void printMainMenu(const std::string& lastPlayedSong) const;  // ← add this
+
 private:
     std::string formatDuration(int seconds) const;
     std::string truncate(const std::string& str, size_t maxLen) const;

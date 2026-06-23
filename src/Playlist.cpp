@@ -104,7 +104,7 @@ std::vector<Song*> Playlist::search(const std::string& query) const {
         
         std::string lowerTitle = song->getTitle();
         std::string lowerArtist = song->getArtist();
-        std::string lowerAlbum = song->getAlbum(); 
+        std::string lowerAlbum = song->getAlbum();
         
         std::transform(lowerTitle.begin(), lowerTitle.end(), lowerTitle.begin(), ::tolower);
         std::transform(lowerArtist.begin(), lowerArtist.end(), lowerArtist.begin(), ::tolower);
@@ -118,7 +118,6 @@ std::vector<Song*> Playlist::search(const std::string& query) const {
     }
     return result;
 }
-
 std::string Playlist::toString() const {
     std::ostringstream oss;
     oss << name_ << " (" << songs_.size() << " songs)";

@@ -4,40 +4,56 @@
 #include "ConfigManager.h"
 #include "UIRenderer.h"
 #include "InputHandler.h"
+#include <vector>
+#include <string>
 
 void PlaylistListScreen::render() {
-    ui_->printHeader("Playlist List");
+    std::vector<UIRenderer::PlaylistInfo> uiPlaylists;
     
-    if (playlists_ == nullptr || playlists_->empty()) {
-        ui_->printMessage("  No playlists available.");
-    } else {
-        ui_->printPlaylistList(*playlists_);
+    // پیدا کردن نام پلی‌لیست فعال فعلی از کانفیگ
+    std::string activePlaylistName = "";
+    if (config_ != nullptr) {
+        activePlaylistName = config_->getActivePlaylist(); // فرض بر وجود متد Getter
+    }
+
+    // تبدیل ساختار داده پروژه به ساختار داده منسجم UI
+    if (playlists_ != nullptr) {
+        for (const auto& playlist : *playlists_) {
+            UIRenderer::PlaylistInfo info;
+            info.name = playlist.getName();
+            
+            // دریافت تعداد آهنگ‌ها (اگر نام متد در پروژه شما متفاوت است آن را اصلاح کنید، مثلاً getSongCount() )
+            info.songCount = static_cast<int>(playlist.getSongs().size()); 
+            
+            // سنجش فعال بودن
+            info.isActive = (info.name == activePlaylistName);
+            
+            uiPlaylists.push_back(info);
+        }
     }
     
-    ui_->printMessage("");
-    ui_->printMessage("  0. Back");
-    ui_->printMessage("");
-    ui_->printMessage("Select a playlist: ");
+    // رندر یکپارچه جدول طلایی-خاکستری
+    ui_->printPlaylistList(uiPlaylists);
 }
 
 ScreenType PlaylistListScreen::handleInput() {
-    if (playlists_ == nullptr || playlists_->empty()) {
-        input_->waitForKey("Press Enter to continue...");
-        return ScreenType::PLAYLIST_LIST;
-    }
-    
-    int choice = input_->getIntChoice("", 0, static_cast<int>(playlists_->size()));
+    int maxChoice = (playlists_ != nullptr) ? static_cast<int>(playlists_->size()) : 0;
+    int choice = input_->getIntChoice("", 0, maxChoice);
     
     if (choice == 0) {
         return ScreenType::MAIN_MENU;
     }
     
     int index = choice - 1;
-    if (index >= 0 && index < static_cast<int>(playlists_->size())) {
+    if (playlists_ != nullptr && index >= 0 && index < maxChoice) {
         Playlist* selected = &(*playlists_)[index];
         if (player_ != nullptr) {
             player_->stop();
             player_->loadPlaylist(selected);
+            
+            // شلیک دستور پخش! (اضافه شدن این خط باعث می‌شود آهنگ بلافاصله شروع شود)
+            player_->play(); 
+            
             if (config_ != nullptr) {
                 config_->setActivePlaylist(selected->getName());
                 config_->save();

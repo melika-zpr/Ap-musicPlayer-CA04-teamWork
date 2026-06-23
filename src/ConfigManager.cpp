@@ -9,6 +9,7 @@ ConfigManager::ConfigManager(const std::string& configPath)
     data_["playback_mode"] = "NO_REPEAT";
     data_["active_playlist"] = "";
     load();
+    save(); // ذخیره‌سازی اولیه برای ایجاد فایل کانفیگ در صورت عدم وجود
 }
 
 void ConfigManager::load() {
@@ -121,4 +122,14 @@ std::string ConfigManager::trim(const std::string& str) const {
     
     size_t end = str.find_last_not_of(" \t\n\r\f\v");
     return str.substr(start, end - start + 1);
+}
+
+std::string ConfigManager::modeToDisplayString(PlaybackMode mode) {
+    switch (mode) {
+        case PlaybackMode::NO_REPEAT:   return "No Repeat";
+        case PlaybackMode::REPEAT_ONE:  return "Repeat One";
+        case PlaybackMode::REPEAT_ALL:  return "Repeat All";
+        case PlaybackMode::SHUFFLE:     return "Shuffle";
+        default:                        return "No Repeat";
+    }
 }
