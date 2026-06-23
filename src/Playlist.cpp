@@ -94,10 +94,7 @@ std::vector<Song*> Playlist::filterByAlbum(const std::string& album) const {
 
 std::vector<Song*> Playlist::search(const std::string& query) const {
     std::vector<Song*> result;
-    
-    if (query.empty()) {
-        return songs_;
-    }
+    if (query.empty()) return songs_;
     
     std::string lowerQuery = query;
     std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(), ::tolower);
@@ -107,15 +104,18 @@ std::vector<Song*> Playlist::search(const std::string& query) const {
         
         std::string lowerTitle = song->getTitle();
         std::string lowerArtist = song->getArtist();
+        std::string lowerAlbum = song->getAlbum(); 
+        
         std::transform(lowerTitle.begin(), lowerTitle.end(), lowerTitle.begin(), ::tolower);
         std::transform(lowerArtist.begin(), lowerArtist.end(), lowerArtist.begin(), ::tolower);
+        std::transform(lowerAlbum.begin(), lowerAlbum.end(), lowerAlbum.begin(), ::tolower);
         
         if (lowerTitle.find(lowerQuery) != std::string::npos ||
-            lowerArtist.find(lowerQuery) != std::string::npos) {
+            lowerArtist.find(lowerQuery) != std::string::npos ||
+            lowerAlbum.find(lowerQuery) != std::string::npos) {
             result.push_back(song);
         }
     }
-    
     return result;
 }
 

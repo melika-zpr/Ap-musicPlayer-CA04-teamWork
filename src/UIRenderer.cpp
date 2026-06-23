@@ -83,21 +83,53 @@ void UIRenderer::printSongList(const std::vector<Song*>& songs, int maxDisplay) 
         printMessage("  (empty)");
         return;
     }
-    
+
+    const int idWidth = 5;
+    const int titleWidth = 22;
+    const int artistWidth = 16;
+    const int albumWidth = 16;
+    const int durationWidth = 10;
+
+    std::cout << "  \u250C";
+    for (int i = 0; i < idWidth; ++i) std::cout << "\u2500"; std::cout << "\u252C";
+    for (int i = 0; i < titleWidth; ++i) std::cout << "\u2500"; std::cout << "\u252C";
+    for (int i = 0; i < artistWidth; ++i) std::cout << "\u2500"; std::cout << "\u252C";
+    for (int i = 0; i < albumWidth; ++i) std::cout << "\u2500"; std::cout << "\u252C";
+    for (int i = 0; i < durationWidth; ++i) std::cout << "\u2500"; std::cout << "\u2510" << std::endl;
+
+    std::cout << "  \u2502"
+              << std::left << std::setfill(' ') << std::setw(idWidth) << "  #" << "\u2502"
+              << std::setw(titleWidth) << " Title" << "\u2502"
+              << std::setw(artistWidth) << " Artist" << "\u2502"
+              << std::setw(albumWidth) << " Album" << "\u2502"
+              << std::setw(durationWidth) << " Duration" << "\u2502" << std::endl;
+
+    std::cout << "  \u251C";
+    for (int i = 0; i < idWidth; ++i) std::cout << "\u2500"; std::cout << "\u253C";
+    for (int i = 0; i < titleWidth; ++i) std::cout << "\u2500"; std::cout << "\u253C";
+    for (int i = 0; i < artistWidth; ++i) std::cout << "\u2500"; std::cout << "\u253C";
+    for (int i = 0; i < albumWidth; ++i) std::cout << "\u2500"; std::cout << "\u253C";
+    for (int i = 0; i < durationWidth; ++i) std::cout << "\u2500"; std::cout << "\u2524" << std::endl;
+
     int count = 0;
-    for (size_t i = 0; i < songs.size() && i < static_cast<size_t>(maxDisplay); i++) {
-        if (songs[i]) {
-            std::cout << "  " << std::setw(3) << std::right << (i + 1) << ". "
-                      << std::setw(30) << std::left << truncate(songs[i]->getTitle(), 28)
-                      << " - " << std::setw(20) << std::left << truncate(songs[i]->getArtist(), 18)
-                      << " (" << formatDuration(songs[i]->getDurationSec()) << ")" << std::endl;
-            count++;
-        }
+    for (size_t i = 0; i < songs.size() && count < maxDisplay; ++i) {
+        if (songs[i] == nullptr) continue;
+        count++;
+
+        std::cout << "  \u2502"
+                  << std::right << std::setw(idWidth - 2) << count << "  \u2502"
+                  << std::left << std::setw(titleWidth) << (" " + truncate(songs[i]->getTitle(), titleWidth - 2)) << "\u2502"
+                  << std::setw(artistWidth) << (" " + truncate(songs[i]->getArtist(), artistWidth - 2)) << "\u2502"
+                  << std::setw(albumWidth) << (" " + truncate(songs[i]->getAlbum(), albumWidth - 2)) << "\u2502"
+                  << std::setw(durationWidth) << ("  " + songs[i]->getFormattedDuration()) << "\u2502" << std::endl;
     }
-    
-    if (static_cast<int>(songs.size()) > maxDisplay) {
-        std::cout << "  ... and " << (songs.size() - maxDisplay) << " more" << std::endl;
-    }
+
+    std::cout << "  \u2514";
+    for (int i = 0; i < idWidth; ++i) std::cout << "\u2500"; std::cout << "\u2534";
+    for (int i = 0; i < titleWidth; ++i) std::cout << "\u2500"; std::cout << "\u2534";
+    for (int i = 0; i < artistWidth; ++i) std::cout << "\u2500"; std::cout << "\u2534";
+    for (int i = 0; i < albumWidth; ++i) std::cout << "\u2500"; std::cout << "\u2534";
+    for (int i = 0; i < durationWidth; ++i) std::cout << "\u2500"; std::cout << "\u2518" << std::endl;
 }
 
 void UIRenderer::printPlaylistList(const std::vector<Playlist>& playlists) const {
@@ -105,12 +137,37 @@ void UIRenderer::printPlaylistList(const std::vector<Playlist>& playlists) const
         printMessage("  No playlists available.");
         return;
     }
-    
-    for (size_t i = 0; i < playlists.size(); i++) {
-        std::cout << "  " << (i + 1) << ". " 
-                  << playlists[i].getName() 
-                  << " (" << playlists[i].size() << " songs)" << std::endl;
+
+    const int idWidth = 5;
+    const int nameWidth = 30;
+    const int countWidth = 15;
+
+    std::cout << "  \u250C";
+    for (int i = 0; i < idWidth; ++i) std::cout << "\u2500"; std::cout << "\u252C";
+    for (int i = 0; i < nameWidth; ++i) std::cout << "\u2500"; std::cout << "\u252C";
+    for (int i = 0; i < countWidth; ++i) std::cout << "\u2500"; std::cout << "\u2510" << std::endl;
+
+    std::cout << "  \u2502"
+              << std::left << std::setfill(' ') << std::setw(idWidth) << "  #" << "\u2502"
+              << std::setw(nameWidth) << " Playlist Name" << "\u2502"
+              << std::setw(countWidth) << " Total Songs" << "\u2502" << std::endl;
+
+    std::cout << "  \u251C";
+    for (int i = 0; i < idWidth; ++i) std::cout << "\u2500"; std::cout << "\u253C";
+    for (int i = 0; i < nameWidth; ++i) std::cout << "\u2500"; std::cout << "\u253C";
+    for (int i = 0; i < countWidth; ++i) std::cout << "\u2500"; std::cout << "\u2524" << std::endl;
+
+    for (size_t i = 0; i < playlists.size(); ++i) {
+        std::cout << "  \u2502"
+                  << std::right << std::setw(idWidth - 2) << (i + 1) << "  \u2502"
+                  << std::left << std::setw(nameWidth) << (" " + truncate(playlists[i].getName(), nameWidth - 2)) << "\u2502"
+                  << std::right << std::setw(countWidth - 3) << playlists[i].size() << "   \u2502" << std::endl;
     }
+
+    std::cout << "  \u2514";
+    for (int i = 0; i < idWidth; ++i) std::cout << "\u2500"; std::cout << "\u2534";
+    for (int i = 0; i < nameWidth; ++i) std::cout << "\u2500"; std::cout << "\u2534";
+    for (int i = 0; i < countWidth; ++i) std::cout << "\u2500"; std::cout << "\u2518" << std::endl;
 }
 
 void UIRenderer::printNowPlaying(const Song* song, float currentTime, float totalTime) const {
@@ -134,7 +191,9 @@ void UIRenderer::printNowPlaying(const Song* song, float currentTime, float tota
     std::cout << "  Time: " << std::setw(2) << std::setfill('0') << currentMin << ":"
               << std::setw(2) << std::setfill('0') << currentSec << " / "
               << std::setw(2) << std::setfill('0') << totalMin << ":"
-              << std::setw(2) << std::setfill('0') << totalSec << std::endl;
+              << std::setw(2) << std::setfill('0') << totalSec 
+              << std::setfill(' ') << std::endl; 
+    
 }
 
 void UIRenderer::printSettings(const std::string& currentMode) const {

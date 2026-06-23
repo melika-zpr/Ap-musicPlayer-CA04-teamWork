@@ -2,12 +2,11 @@
 
 MusicLibrary::MusicLibrary() {}
 
-MusicLibrary::~MusicLibrary()
-{
-    for (Song* song : songs)
-    {
-        delete song;
+MusicLibrary::~MusicLibrary() {
+    for (Song* song : songs) {
+        delete song; 
     }
+    songs.clear();
 }
 
 void MusicLibrary::addSong(Song* song)
