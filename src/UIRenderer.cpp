@@ -34,12 +34,12 @@ void UIRenderer::drawBorder(const std::string &title, int width) const
 
     if (!title.empty())
     {
-        int padding = (width - 2 - title.length()) / 2;
+        int padding = (width - 2 - static_cast<int>(title.length())) / 2;
         std::cout << "\u2551";
         for (int i = 0; i < padding; i++)
             std::cout << " ";
         std::cout << title;
-        for (int i = 0; i < width - 2 - padding - title.length(); i++)
+        for (int i = 0; i < width - 2 - padding - static_cast<int>(title.length()); i++)
             std::cout << " ";
         std::cout << "\u2551" << std::endl;
 
@@ -242,34 +242,148 @@ void UIRenderer::printPlaylistList(const std::vector<Playlist> &playlists) const
         std::cout << "\u2500";
     std::cout << "\u2518" << std::endl;
 }
-
 void UIRenderer::printNowPlaying(const Song *song, float currentTime, float totalTime) const
 {
-    if (song == nullptr)
-    {
-        printMessage("  No song is currently playing.");
+    (void)currentTime; // جلوگیری از وارنینگ کامپایلر
+
+    clearScreen(); 
+    std::cout << std::endl;
+
+    // کدهای رنگی ANSI برای استایل‌دهی سنترال
+    const std::string RESET        = "\033[0m";
+    const std::string BORDER_BLUE  = "\033[38;5;111m"; // آبی مرزها
+    const std::string TEXT_WHITE   = "\033[97m";       // سفید درخشان
+    const std::string TEXT_GRAY    = "\033[38;5;244m"; // خاکستری لیبل‌ها
+    const std::string VALUE_GREEN  = "\033[38;5;114m"; // سبز عنوان آهنگ
+    const std::string SHIT_YELLOW  = "\033[38;5;215m"; // زرد وضعیت
+    const std::string DIM_FOOTER   = "\033[38;5;240m"; // خاکستری تیره راهنما
+
+    // بلوک‌های رنگی فقط برای سمت چپ (سمت راست کاملاً حذف شد)
+    const std::string BAR_WHITE  = "\033[97m█\033[0m";
+    const std::string BAR_GREEN  = "\033[38;5;114m█\033[0m";
+    const std::string BAR_GRAY   = "\033[38;5;244m█\033[0m";
+    const std::string BAR_YELLOW = "\033[38;5;215m█\033[0m";
+
+    const int INNER_WIDTH = 60; // عرض ثابت داخل باکس
+
+    // تابع کمکی برای تکرار خطوط جدول
+    auto repeatStr = [](const std::string& ch, int count) {
+        std::string r;
+        for (int i = 0; i < count; ++i) r += ch;
+        return r;
+    };
+
+    // تابع هوشمند برای محاسبه طول واقعی بصری (حذف افکت‌های ANSI و شمارش درست UTF-8)
+    auto visual_len = [](const std::string& str) {
+        int len = 0;
+        bool in_ansi = false;
+        for (size_t i = 0; i < str.length(); ++i) {
+            if (str[i] == '\033') {
+                in_ansi = true;
+                continue;
+            }
+            if (in_ansi) {
+                if (std::isalpha(str[i])) in_ansi = false;
+                continue;
+            }
+            // شمارش بایت‌های اصلی UTF-8
+            unsigned char c = str[i];
+            if ((c & 0xC0) != 0x80) len++;
+        }
+        return len;
+    };
+
+    // همرنگ‌ساز و ترازکننده خودکار دیواره سمت راست جدول
+    auto printLine = [&](const std::string& content) {
+        int current_vis_len = visual_len(content);
+        int padding = INNER_WIDTH - current_vis_len;
+        std::cout << BORDER_BLUE << "  ║" << RESET << content;
+        if (padding > 0) {
+            std::cout << std::string(padding, ' ');
+        }
+        std::cout << BORDER_BLUE << "║" << RESET << std::endl;
+    };
+
+    if (song == nullptr) {
+        std::cout << BORDER_BLUE << "  ╔" << repeatStr("═", INNER_WIDTH) << "╗" << RESET << std::endl;
+        printLine(" No song is currently playing.");
+        std::cout << BORDER_BLUE << "  ╚" << repeatStr("═", INNER_WIDTH) << "╝" << RESET << std::endl;
         return;
     }
 
-    std::cout << std::endl;
-    std::cout << "  \u266B " << song->getTitle() << std::endl;
-    std::cout << "  Artist: " << song->getArtist() << std::endl;
-    std::cout << "  Album: " << song->getAlbum() << std::endl;
-    std::cout << "  Duration: " << formatDuration(song->getDurationSec()) << std::endl;
-    std::cout << std::endl;
+    // 1. هدر اصلی بازیکن
+    std::cout << BORDER_BLUE << "  ╔" << repeatStr("═", INNER_WIDTH) << "╗" << RESET << std::endl;
+    
+    std::string headerText = "♫  Terminal Music Player  ♫";
+    int headPad = (INNER_WIDTH - visual_len(headerText)) / 2;
+    std::string headerContent = std::string(headPad, ' ') + TEXT_WHITE + headerText;
+    printLine(headerContent);
 
-    int currentMin = static_cast<int>(currentTime) / 60;
-    int currentSec = static_cast<int>(currentTime) % 60;
-    int totalMin = static_cast<int>(totalTime) / 60;
-    int totalSec = static_cast<int>(totalTime) % 60;
+    // 2. بخش جزئیات آهنگ (Now Playing)
+    std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
 
-    std::cout << "  Time: "
-              << std::right << std::setw(2) << std::setfill('0') << currentMin << ":"
-              << std::right << std::setw(2) << std::setfill('0') << currentSec << " / "
-              << std::right << std::setw(2) << std::setfill('0') << totalMin << ":"
-              << std::right << std::setw(2) << std::setfill('0') << totalSec
-              << std::setfill(' ') << std::left << std::endl;
-              
+    // ردیف Now Playing
+    printLine(" " + BAR_WHITE + " " + TEXT_WHITE + "Now Playing");
+
+    // ردیف Title (سبز)
+    std::string titleVal = truncate(song->getTitle(), 42);
+    printLine(" " + BAR_GREEN + TEXT_GRAY + " Title  : " + VALUE_GREEN + titleVal);
+
+    // ردیف Artist
+    std::string artistVal = truncate(song->getArtist(), 42);
+    printLine(" " + BAR_GRAY + TEXT_GRAY + " Artist : " + TEXT_WHITE + artistVal);
+
+    // ردیف Album + Year (تراز شده در راست)
+    std::string albumVal = truncate(song->getAlbum(), 32);
+    std::string yearVal = "[1975]"; 
+    std::string albumLeft = " " + BAR_GRAY + TEXT_GRAY + " Album  : " + TEXT_GRAY + albumVal;
+    int albumSpaces = INNER_WIDTH - visual_len(albumLeft) - visual_len(yearVal) - 1;
+    std::string albumContent = albumLeft + std::string(albumSpaces > 0 ? albumSpaces : 0, ' ') + TEXT_GRAY + yearVal + " ";
+    printLine(albumContent);
+
+    // ردیف Genre
+    std::string genreVal = "Rock"; 
+    printLine(" " + BAR_GRAY + TEXT_GRAY + " Genre  : " + TEXT_GRAY + genreVal);
+
+    // 3. بخش وضعیت پخش (Playing Status)
+    std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
+
+    // ردیف وضعیت + نام پلی‌لیست
+    std::string statusVal = "▶  PLAYING";
+    std::string playlistVal = "Playlist: rock_hits"; 
+    std::string statusLeft = " " + BAR_YELLOW + " " + SHIT_YELLOW + statusVal;
+    int statusSpaces = INNER_WIDTH - visual_len(statusLeft) - visual_len(playlistVal) - 1;
+    std::string statusContent = statusLeft + std::string(statusSpaces > 0 ? statusSpaces : 0, ' ') + SHIT_YELLOW + playlistVal + " ";
+    printLine(statusContent);
+
+    // ردیف Mode + Duration واقعی
+    std::string modeVal = "Mode: SHUFFLE";
+    int totMin = static_cast<int>(totalTime) / 60;
+    int totSec = static_cast<int>(totalTime) % 60;
+    char durationBuf[32];
+    snprintf(durationBuf, sizeof(durationBuf), "Duration: %02d:%02d", totMin, totSec);
+    std::string durationStr = durationBuf;
+
+    std::string modeLeft = " " + BAR_YELLOW + " " + TEXT_GRAY + modeVal;
+    int modeSpaces = INNER_WIDTH - visual_len(modeLeft) - visual_len(durationStr) - 1;
+    std::string modeContent = modeLeft + std::string(modeSpaces > 0 ? modeSpaces : 0, ' ') + TEXT_GRAY + durationStr + " ";
+    printLine(modeContent);
+
+    // 4. فوتر میانبرها (تراز شده دو خطی برای جا شدن f و r)
+    std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
+
+    std::string foot1 = "[p] play/pause  [s] stop  [n] next  [b] prev";
+    int f1Pad = (INNER_WIDTH - visual_len(foot1)) / 2;
+    std::string foot1Content = std::string(f1Pad, ' ') + DIM_FOOTER + foot1;
+    printLine(foot1Content);
+
+    std::string foot2 = "[f] fwd 10s   [r] bwd 10s   [q] menu";
+    int f2Pad = (INNER_WIDTH - visual_len(foot2)) / 2;
+    std::string foot2Content = std::string(f2Pad, ' ') + DIM_FOOTER + foot2;
+    printLine(foot2Content);
+
+    // بستن باکس
+    std::cout << BORDER_BLUE << "  ╚" << repeatStr("═", INNER_WIDTH) << "╝" << RESET << std::endl;
 }
 
 void UIRenderer::printSettings(const std::string &currentMode) const
