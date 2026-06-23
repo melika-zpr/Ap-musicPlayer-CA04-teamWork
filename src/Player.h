@@ -31,12 +31,21 @@ public:
     Player();
     ~Player();
 
+    Playlist* getCurrentPlaylist() const { return currentPlaylist; }
+    void setCurrentIndex(int index) {
+        if (currentPlaylist && index >= 0 && index < currentPlaylist->size()) {
+            currentIndex = index;
+        }
+    }
+
+
     bool loadPlaylist(Playlist* playlist);
 
     void play();
     void pause();
     void resume();
     void stop();
+    void update();
 
     void next();
     void previous();

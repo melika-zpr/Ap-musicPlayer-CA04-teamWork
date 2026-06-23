@@ -135,22 +135,23 @@ void Player::play()
 
 void Player::pause()
 {
-    if (!soundLoaded)
-        return;
-
-    ma_sound_stop(&sound);
-
-    state = PlayerState::Paused;
+    if (state == PlayerState::Playing && soundLoaded)
+    {
+        ma_sound_stop(&sound);
+        state = PlayerState::Paused;
+    }
 }
 
 void Player::resume()
 {
-    if (!soundLoaded)
-        return;
-
-    ma_sound_start(&sound);
-
-    state = PlayerState::Playing;
+    if (state == PlayerState::Paused && soundLoaded)
+    {
+        ma_result result = ma_sound_start(&sound);
+        if (result == MA_SUCCESS)
+        {
+            state = PlayerState::Playing;
+        }
+    }
 }
 
 void Player::stop()
@@ -168,28 +169,75 @@ void Player::stop()
 
 void Player::next()
 {
-    if (currentPlaylist == nullptr)
-        return;
+    if (currentPlaylist == nullptr || currentPlaylist->isEmpty()) return;
 
-    if (currentIndex + 1 >= currentPlaylist->size())
-        return;
-
-    currentIndex++;
+    if (playbackMode == PlaybackMode::SHUFFLE)
+    {
+        std::random_device rd;
+        std::mt19937 rng(rd());
+        std::uniform_int_distribution<int> dist(0, currentPlaylist->size() - 1);
+        currentIndex = dist(rng);
+    }
+    else if (playbackMode == PlaybackMode::REPEAT_ALL)
+    {
+        currentIndex = (currentIndex + 1) % currentPlaylist->size();
+    }
+    else if (playbackMode == PlaybackMode::NO_REPEAT)
+    {
+        if (currentIndex < currentPlaylist->size() - 1)
+        {
+            currentIndex++;
+        }
+        else
+        {
+            stop();
+            return;
+        }
+    }
+    else if (playbackMode == PlaybackMode::REPEAT_ONE)
+    {
+        currentIndex = (currentIndex + 1) % currentPlaylist->size();
+    }
 
     play();
 }
 
 void Player::previous()
 {
-    if (currentPlaylist == nullptr)
-        return;
+    if (currentPlaylist == nullptr || currentPlaylist->isEmpty()) return;
 
-    if (currentIndex == 0)
-        return;
-
-    currentIndex--;
+    if (playbackMode == PlaybackMode::SHUFFLE)
+    {
+        std::random_device rd;
+        std::mt19937 rng(rd());
+        std::uniform_int_distribution<int> dist(0, currentPlaylist->size() - 1);
+        currentIndex = dist(rng);
+    }
+    else if (playbackMode == PlaybackMode::REPEAT_ALL || playbackMode == PlaybackMode::NO_REPEAT || playbackMode == PlaybackMode::REPEAT_ONE)
+    {
+        currentIndex = (currentIndex - 1 + currentPlaylist->size()) % currentPlaylist->size();
+    }
 
     play();
+}
+
+void Player::update()
+{
+    if (state == PlayerState::Playing && soundLoaded)
+    {
+        if (ma_sound_at_end(&sound))
+        {
+            if (playbackMode == PlaybackMode::REPEAT_ONE)
+            {
+                ma_sound_seek_to_pcm_frame(&sound, 0);
+                ma_sound_start(&sound);
+            }
+            else
+            {
+                next();
+            }
+        }
+    }
 }
 
 void Player::tick()
@@ -297,4 +345,8 @@ int Player::getCurrentPosition() const
     ma_sound_get_cursor_in_pcm_frames(const_cast<ma_sound*>(&sound), &frames);
 
     return static_cast<int>(frames / ma_engine_get_sample_rate(const_cast<ma_engine*>(&engine)));
+}
+
+PlayerState Player::getState() const {
+    return state;
 }
