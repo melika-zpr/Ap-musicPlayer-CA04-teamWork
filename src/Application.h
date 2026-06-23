@@ -1,44 +1,36 @@
 #pragma once
 
+#include <vector>
+
+#include "ScreenManager.h"
+#include "UIRenderer.h"
+#include "InputHandler.h"
+
 #include "Player.h"
 #include "ConfigManager.h"
 #include "MusicLibrary.h"
 #include "Playlist.h"
-#include "UIRenderer.h"
-#include "InputHandler.h"
-#include "MainMenuScreen.h"
-#include "NowPlayingScreen.h"
-#include "PlaylistListScreen.h"
-#include "PlaylistViewScreen.h"
-#include "SettingsScreen.h"
-#include <vector>
 
 class Application {
+private:
+    void loadData();
+
+    ScreenManager screenManager;
+
+    MusicLibrary library_;
+    std::vector<Playlist> playlists_;
+
+    Player player_;
+    ConfigManager config_;
+
+    UIRenderer uiRenderer;
+    InputHandler input_;
+
 public:
     Application();
     ~Application();
-    
+
+    void init();
     void run();
-    
-private:
-    void loadData();
-    void setupScreens();
-    void changeScreen(ScreenType type);
-    
-    MusicLibrary library_;
-    std::vector<Playlist> playlists_;
-    
-    Player player_;
-    ConfigManager config_;
-    UIRenderer ui_;
-    InputHandler input_;
-    
-    MainMenuScreen mainMenuScreen_;
-    NowPlayingScreen nowPlayingScreen_;
-    PlaylistListScreen playlistListScreen_;
-    PlaylistViewScreen playlistViewScreen_;
-    SettingsScreen settingsScreen_;
-    
-    Screen* currentScreen_ = nullptr;
-    bool isRunning_ = true;
+    void shutdown();
 };

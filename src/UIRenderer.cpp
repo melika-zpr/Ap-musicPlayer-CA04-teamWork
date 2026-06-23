@@ -1,229 +1,1318 @@
 #include "UIRenderer.h"
-#include "Song.h"
-#include "Playlist.h"
+
 #include <iostream>
 #include <iomanip>
-#include <cstdlib>
+#include <sstream>
+#include <algorithm>
 
+namespace
+{
+    constexpr int WINDOW_WIDTH = 72;
+
+    const std::string TL = "┌";
+    const std::string TR = "┐";
+    const std::string BL = "└";
+    const std::string BR = "┘";
+
+    const std::string LT = "├";
+    const std::string RT = "┤";
+
+    const std::string H = "─";
+    const std::string V = "│";
+
+}
+
+// تعداد ستون‌های نمایشی یک رشته UTF-8 را برمی‌گرداند.
+// کاراکترهای 3 بایتی مثل ♫ ▶ ◀ █ ░ ─ │ هر کدام 1 ستون نمایشی دارند.
+static int displayWidth(const std::string& str)
+{
+    int width = 0;
+    for (size_t i = 0; i < str.size(); )
+    {
+        unsigned char c = str[i];
+        if (c < 0x80)        { ++width; ++i; }   // ASCII: 1 بایت، 1 ستون
+        else if (c < 0xC0)   { ++i; }             // بایت ادامه‌دار: رد کن
+        else if (c < 0xE0)   { ++width; i += 2; } // 2 بایتی: 1 ستون
+        else if (c < 0xF0)   { ++width; i += 3; } // 3 بایتی: 1 ستون
+        else                  { width += 2; i += 4; } // 4 بایتی (emoji): 2 ستون
+    }
+    return width;
+}
+
+static std::string repeat(const std::string& s, int count)
+{
+    std::string out;
+
+    for (int i = 0; i < count; i++)
+        out += s;
+
+    return out;
+}
+
+static std::string centerText(
+    const std::string& text,
+    int width
+)
+{
+    int dw = displayWidth(text);
+    if (dw >= width)
+        return text;
+
+    int left  = (width - dw) / 2;
+    int right =  width - dw  - left;
+
+    return std::string(left, ' ')
+        + text
+        + std::string(right, ' ');
+}
+
+static std::string leftText(
+    const std::string& text,
+    int width
+)
+{
+    int dw = displayWidth(text);
+    if (dw >= width)
+        return text;
+
+    return text + std::string(width - dw, ' ');
+}
+
+static std::string rightText(
+    const std::string& text,
+    int width
+)
+{
+    int dw = displayWidth(text);
+    if (dw >= width)
+        return text;
+
+    return std::string(width - dw, ' ')
+        + text;
+}
+
+enum class Align
+{
+    Left,
+    Center,
+    Right
+};
+
+static void drawRow(
+    const std::string& text,
+    Align align
+)
+{
+    std::string output;
+
+    switch (align)
+    {
+    case Align::Left:
+        output = leftText(text, WINDOW_WIDTH);
+        break;
+
+    case Align::Center:
+        output = centerText(text, WINDOW_WIDTH);
+        break;
+
+    case Align::Right:
+        output = rightText(text, WINDOW_WIDTH);
+        break;
+    }
+
+    std::cout
+        << V
+        << output
+        << V
+        << '\n';
+}
+
+
+void UIRenderer::clear()
+{
 #ifdef _WIN32
-    #define CLEAR_CMD "cls"
+    system("cls");
 #else
-    #define CLEAR_CMD "clear"
+    system("clear");
 #endif
-
-void UIRenderer::clearScreen() const {
-    std::system(CLEAR_CMD);
 }
 
-void UIRenderer::drawHorizontalLine(const std::string& ch, int width) const {
-    for (int i = 0; i < width; i++) {
-        std::cout << ch;
+
+
+void UIRenderer::topBorder()
+{
+    std::cout
+        << TL
+        << repeat(H, WINDOW_WIDTH)
+        << TR
+        << '\n';
+}
+
+
+
+void UIRenderer::bottomBorder()
+{
+    std::cout
+        << BL
+        << repeat(H, WINDOW_WIDTH)
+        << BR
+        << '\n';
+}
+
+
+
+void UIRenderer::separator()
+{
+    std::cout
+        << LT
+        << repeat(H, WINDOW_WIDTH)
+        << RT
+        << '\n';
+}
+
+
+
+void UIRenderer::emptyLine()
+
+{
+
+    drawRow("", Align::Left);
+
+}
+
+
+
+void UIRenderer::textLine(
+
+    const std::string& text
+
+)
+
+{
+
+    drawRow(text, Align::Left);
+
+}
+
+
+
+void UIRenderer::centerLine(
+
+    const std::string& text
+
+)
+
+{
+
+    drawRow(text, Align::Center);
+
+}
+
+
+
+void UIRenderer::rightLine(
+
+    const std::string& text
+
+)
+
+{
+
+    drawRow(text, Align::Right);
+
+}
+
+
+
+void UIRenderer::beginWindow(
+    const std::string& title
+)
+{
+    topBorder();
+    centerLine(title);
+    separator();
+}
+
+
+
+void UIRenderer::endWindow()
+{
+    bottomBorder();
+}
+
+
+
+void UIRenderer::section(
+    const std::string& title
+)
+{
+    textLine(title);
+    separator();
+}
+
+
+
+void UIRenderer::message(
+
+    const std::string& text
+
+)
+
+{
+
+    drawRow(text, Align::Left);
+
+}
+
+
+
+void UIRenderer::blank()
+{
+    emptyLine();
+}
+
+
+
+void UIRenderer::footer(
+    const std::string& text
+)
+{
+    separator();
+    textLine(text);
+}
+
+
+
+std::string UIRenderer::formatDuration(
+    int seconds
+)
+{
+    int minutes = seconds / 60;
+    int remain = seconds % 60;
+
+    std::stringstream ss;
+
+    ss
+        << std::setw(2)
+        << std::setfill('0')
+        << minutes
+        << ":"
+        << std::setw(2)
+        << remain;
+
+    return ss.str();
+}
+
+// ===== END OF PART 1 =====
+// Continue with Part 2
+
+void UIRenderer::menuItem(
+    int number,
+    const std::string& text,
+    bool selected
+)
+{
+    std::stringstream ss;
+
+    if (selected)
+        ss << "▶ ";
+    else
+        ss << "  ";
+
+    ss << number << ". " << text;
+
+    textLine(ss.str());
+}
+
+
+
+void UIRenderer::keyValue(
+    const std::string& key,
+    const std::string& value
+)
+{
+    std::stringstream ss;
+
+    ss << std::left
+       << std::setw(12)
+       << key
+       << ": "
+       << value;
+
+    textLine(ss.str());
+}
+
+
+
+void UIRenderer::doubleKeyValue(
+    const std::string& leftKey,
+    const std::string& leftValue,
+    const std::string& rightKey,
+    const std::string& rightValue
+)
+{
+    std::stringstream ss;
+
+    ss << std::left
+       << std::setw(8)
+       << leftKey
+       << ": "
+       << std::setw(20)
+       << leftValue;
+
+    ss << " ";
+
+    ss << std::setw(8)
+       << rightKey
+       << ": "
+       << rightValue;
+
+    textLine(ss.str());
+}
+
+
+
+void UIRenderer::statusBar(
+    const std::string& state,
+    const std::string& playlist,
+    const std::string& mode,
+    const std::string& duration
+)
+{
+    std::stringstream line1;
+    line1 << state << "    Playlist: " << playlist;
+
+    std::stringstream line2;
+    line2 << "Mode: "
+          << mode
+          << "    Duration: "
+          << duration;
+
+    separator();
+    textLine(line1.str());
+    textLine(line2.str());
+}
+
+
+
+void UIRenderer::prompt(
+    const std::string&
+)
+{
+    std::cout << "\n> ";
+}
+
+
+
+void UIRenderer::error(
+    const std::string& text
+)
+{
+    separator();
+    textLine("ERROR: " + text);
+}
+
+
+
+void UIRenderer::success(
+    const std::string& text
+)
+{
+    separator();
+    textLine("SUCCESS: " + text);
+}
+
+
+
+void UIRenderer::warning(
+    const std::string& text
+)
+{
+    separator();
+    textLine("WARNING: " + text);
+}
+
+
+
+void UIRenderer::nowPlayingHeader()
+{
+    beginWindow("♫ Terminal Music Player ♫");
+    textLine("Now Playing");
+    separator();
+}
+
+
+
+void UIRenderer::mainMenuHeader(
+    const std::string& lastSong
+)
+{
+    beginWindow("♫ Terminal Music Player ♫");
+
+    if (!lastSong.empty())
+    {
+        textLine("Last played: " + lastSong);
+        separator();
     }
-    std::cout << std::endl;
 }
 
-void UIRenderer::drawBorder(const std::string& title, int width) const {
-    std::cout << "\u2554"; 
-    for (int i = 0; i < width - 2; i++) std::cout << "\u2550"; 
-    std::cout << "\u2557" << std::endl;  
-    
-    if (!title.empty()) {
-        int padding = (width - 2 - title.length()) / 2;
-        std::cout << "\u2551"; 
-        for (int i = 0; i < padding; i++) std::cout << " ";
-        std::cout << title;
-        for (int i = 0; i < width - 2 - padding - title.length(); i++) std::cout << " ";
-        std::cout << "\u2551" << std::endl; 
-        
-        std::cout << "\u2560";  
-        for (int i = 0; i < width - 2; i++) std::cout << "\u2550";  
-        std::cout << "\u2563" << std::endl;  
+
+
+void UIRenderer::playlistHeader(
+    const std::string& playlistName,
+    int songCount
+)
+{
+    beginWindow("Browse: " + playlistName);
+
+    std::stringstream ss;
+
+    ss << playlistName
+       << " ("
+       << songCount
+       << " songs)";
+
+    textLine(ss.str());
+
+    separator();
+}
+
+
+
+void UIRenderer::settingsHeader(
+    const std::string& currentMode
+)
+{
+    beginWindow("Settings");
+
+    textLine("Playback Mode");
+
+    textLine("Current: " + currentMode);
+
+    separator();
+}
+
+
+
+void UIRenderer::playlistsHeader()
+{
+    beginWindow("Playlists");
+
+    textLine("#   Name                         Songs");
+
+    separator();
+}
+
+
+
+void UIRenderer::filterHeader(
+    const std::string& playlistName
+)
+{
+    beginWindow("Filter");
+
+    textLine("Filter songs in: " + playlistName);
+
+    separator();
+}
+
+
+
+void UIRenderer::searchHeader(
+    const std::string& query
+)
+{
+    beginWindow("Search");
+
+    textLine("Search: \"" + query + "\"");
+
+    separator();
+}
+
+
+
+void UIRenderer::waitForEnter()
+{
+    separator();
+
+    centerLine("Press ENTER to continue...");
+
+    bottomBorder();
+
+    std::cin.ignore(
+        std::numeric_limits<std::streamsize>::max(),
+        '\n'
+    );
+
+    std::cin.get();
+}
+
+
+
+// ===== END OF PART 2 =====
+// Continue with Part 3
+
+void UIRenderer::tableHeader(
+    const std::vector<std::string>& headers,
+    const std::vector<int>& widths
+)
+{
+    std::stringstream row;
+
+    row << " ";
+
+    for (size_t i = 0; i < headers.size(); ++i)
+    {
+        std::string text = headers[i];
+
+        if ((int)text.length() > widths[i])
+            text = text.substr(0, widths[i]);
+
+        row << std::left
+            << std::setw(widths[i])
+            << text;
+
+        if (i != headers.size() - 1)
+            row << " │ ";
+    }
+
+    textLine(row.str());
+
+    separator();
+}
+
+
+
+void UIRenderer::tableRow(
+    const std::vector<std::string>& values,
+    const std::vector<int>& widths
+)
+{
+    std::stringstream row;
+
+    row << " ";
+
+    for (size_t i = 0; i < values.size(); ++i)
+    {
+        std::string value = values[i];
+        int dw = displayWidth(value);
+
+        // اگر متن بیشتر از عرض ستون بود، کوتاه کن
+        if (dw > widths[i])
+        {
+            // از انتها حذف کن تا displayWidth مناسب بشه
+            while (displayWidth(value) > widths[i] - 3 && !value.empty())
+                value.pop_back();
+            value += "...";
+            dw = displayWidth(value);
+        }
+
+        // padding دستی به جای setw (چون setw بایت‌محور است)
+        row << value
+            << std::string(widths[i] - dw, ' ');
+
+        if (i != values.size() - 1)
+            row << " │ ";
+    }
+
+    textLine(row.str());
+}
+
+
+
+void UIRenderer::songRow(
+    int index,
+    const Song* song,
+    bool selected
+)
+{
+    if (song == nullptr)
+        return;
+
+    std::string marker =
+        selected ? "▶" : " ";
+
+    std::stringstream number;
+
+    number
+        << marker
+        << index;
+
+    tableRow(
+        {
+            number.str(),
+            song->getTitle(),
+            song->getArtist(),
+            formatDuration(song->getDurationSec())
+        },
+        {
+            4,
+            34,
+            20,
+            8
+        }
+    );
+}
+
+
+
+void UIRenderer::playlistRow(
+    int index,
+    const Playlist* playlist,
+    bool active
+)
+{
+    if (playlist == nullptr)
+        return;
+
+    std::stringstream songs;
+
+    songs << playlist->size();
+
+    std::string name =
+        playlist->getName();
+
+    if (active)
+        name += "  ▶";
+
+    tableRow(
+        {
+            std::to_string(index),
+            name,
+            songs.str()
+        },
+        {
+            4,
+            50,
+            8
+        }
+    );
+}
+
+
+
+void UIRenderer::settingsRow(
+    int index,
+    const std::string& mode,
+    bool active
+)
+{
+    std::string text =
+        std::to_string(index)
+        + ". "
+        + mode;
+
+    if (active)
+        text += "   ◀";
+
+    textLine(text);
+}
+
+
+
+void UIRenderer::artistRow(
+    int index,
+    const std::string& artist,
+    int songs
+)
+{
+    std::stringstream ss;
+
+    ss
+        << index
+        << ". "
+        << artist
+        << " ("
+        << songs
+        << " songs)";
+
+    textLine(ss.str());
+}
+
+
+
+void UIRenderer::albumRow(
+    int index,
+    const std::string& album,
+    int songs
+)
+{
+    std::stringstream ss;
+
+    ss
+        << index
+        << ". "
+        << album
+        << " ("
+        << songs
+        << " songs)";
+
+    textLine(ss.str());
+}
+
+
+
+void UIRenderer::searchResultHeader(
+    int count
+)
+{
+    std::stringstream ss;
+
+    ss
+        << count
+        << " result(s).";
+
+    separator();
+
+    textLine(ss.str());
+}
+
+
+
+void UIRenderer::sortHeader(
+    const std::string& currentSort
+)
+{
+    separator();
+
+    textLine(
+        "Sort: "
+        + currentSort
+    );
+}
+
+
+
+void UIRenderer::sortMenu()
+{
+    separator();
+
+    textLine("Sort by:");
+
+    textLine("1. Title");
+
+    textLine("2. Artist");
+
+    textLine("3. Album");
+
+    textLine("4. Year");
+
+    textLine("5. Duration");
+
+    textLine("");
+
+    textLine("Add '+' for descending");
+
+    textLine("Example: 4+");
+}
+
+
+
+// ===== END OF PART 3 =====
+// Continue with Part 4
+
+void UIRenderer::controlsBar(
+    const std::vector<std::string>& controls
+)
+{
+    separator();
+
+    std::stringstream ss;
+
+    for (size_t i = 0; i < controls.size(); i++)
+    {
+        ss << "[" << controls[i] << "]";
+
+        if (i != controls.size() - 1)
+            ss << " ";
+    }
+
+    textLine(ss.str());
+}
+
+
+
+void UIRenderer::mainMenu()
+{
+    menuItem(1, "Now Playing");
+    menuItem(2, "Playlists");
+    menuItem(3, "Browse Playlist");
+    menuItem(4, "Settings");
+
+    footer("0. Quit (saves state)");
+}
+
+
+
+void UIRenderer::settingsMenu(
+    const std::string& currentMode
+)
+{
+    textLine("Playback Mode");
+    separator();
+
+    settingsRow(
+        1,
+        "NO_REPEAT",
+        currentMode == "NO_REPEAT"
+    );
+
+    settingsRow(
+        2,
+        "REPEAT_ONE",
+        currentMode == "REPEAT_ONE"
+    );
+
+    settingsRow(
+        3,
+        "REPEAT_ALL",
+        currentMode == "REPEAT_ALL"
+    );
+
+    settingsRow(
+        4,
+        "SHUFFLE",
+        currentMode == "SHUFFLE"
+    );
+
+    footer("0. Back");
+}
+
+
+
+void UIRenderer::playlistTableHeader()
+{
+    tableHeader(
+        {
+            "#",
+            "Name",
+            "Songs"
+        },
+        {
+            4,
+            40,
+            8
+        }
+    );
+}
+
+
+
+void UIRenderer::songTableHeader()
+{
+    tableHeader(
+        {
+            "#",
+            "Title",
+            "Artist",
+            "Dur"
+        },
+        {
+            4,
+            28,
+            18,
+            8
+        }
+    );
+}
+
+
+
+void UIRenderer::browseFooter()
+{
+    separator();
+
+    textLine("[num] play song");
+
+    textLine("[s] sort");
+
+    textLine("[f] filter");
+
+    textLine("[/] search");
+
+    textLine("[0] back");
+}
+
+
+
+void UIRenderer::nowPlayingFooter()
+{
+    separator();
+
+    textLine("[p] pause");
+
+    textLine("[n] next");
+
+    textLine("[b] previous");
+
+    textLine("[s] stop");
+
+    textLine("[q] menu");
+}
+
+
+
+void UIRenderer::filterMenu()
+{
+    textLine("Filter by:");
+
+    textLine("");
+
+    textLine("1. Artist");
+
+    textLine("2. Album");
+
+    footer("0. Back");
+}
+
+
+
+void UIRenderer::printCenteredMessage(
+    const std::string& message
+)
+{
+    emptyLine();
+
+    centerLine(message);
+
+    emptyLine();
+}
+
+
+
+void UIRenderer::printEmptyPlaylist()
+{
+    printCenteredMessage(
+        "Playlist is empty."
+    );
+}
+
+
+
+void UIRenderer::printNoResults()
+{
+    printCenteredMessage(
+        "No matching songs found."
+    );
+}
+
+
+
+void UIRenderer::printLoading(
+    const std::string& text
+)
+{
+    separator();
+    textLine("Loading " + text + "...");
+}
+
+
+
+void UIRenderer::printCompleted()
+{
+    textLine("Done.");
+}
+
+
+
+void UIRenderer::confirmMessage(
+    const std::string& message
+)
+{
+    separator();
+
+    centerLine(message);
+
+    separator();
+}
+
+
+
+void UIRenderer::playbackState(
+    PlayerState state
+)
+{
+    switch (state)
+    {
+    case PlayerState::Playing:
+        textLine("▶ PLAYING");
+        break;
+
+    case PlayerState::Paused:
+        textLine("⏸ PAUSED");
+        break;
+
+    case PlayerState::Stopped:
+        textLine("■ STOPPED");
+        break;
     }
 }
 
-void UIRenderer::printHeader(const std::string& title) const {
-    clearScreen();
-    std::cout << std::endl;
-    drawBorder(title, 50);
-    std::cout << std::endl;
-}
 
-void UIRenderer::printFooter(const std::string& options) const {
-    std::cout << std::endl;
-    drawHorizontalLine("\u2500", 50); 
-    std::cout << options << std::endl;
-    std::cout << std::endl;
-}
 
-void UIRenderer::printMessage(const std::string& message, bool newLine) const {
-    if (newLine) {
-        std::cout << message << std::endl;
-    } else {
-        std::cout << message;
+// ===== END OF PART 4 =====
+// Continue with Part 5
+
+void UIRenderer::progressBar(
+    int current,
+    int total,
+    int width
+)
+{
+    if (total <= 0)
+        total = 1;
+
+    int filled = current * width / total;
+
+    std::stringstream ss;
+
+    ss << "[";
+
+    for (int i = 0; i < width; i++)
+    {
+        if (i < filled)
+            ss << "█";
+        else
+            ss << "░";
     }
+
+    ss << "] ";
+
+    ss << formatDuration(current);
+
+    ss << " / ";
+
+    ss << formatDuration(total);
+
+    textLine(ss.str());
 }
 
-void UIRenderer::printError(const std::string& error) const {
-    std::cout << "\u2716 " << error << std::endl;  
-}
 
-void UIRenderer::printMenu(const std::vector<std::string>& items, 
-                           const std::string& prompt) const {
-    for (size_t i = 0; i < items.size(); i++) {
-        std::cout << "  " << (i + 1) << ". " << items[i] << std::endl;
-    }
-    std::cout << std::endl;
-    std::cout << "  0. Back" << std::endl;
-    std::cout << std::endl;
-    std::cout << prompt;
-}
 
-void UIRenderer::printSongList(const std::vector<Song*>& songs, int maxDisplay) const {
-    if (songs.empty()) {
-        printMessage("  (empty)");
+void UIRenderer::showPlaybackInfo(
+    const Song* song,
+    const std::string& playlist,
+    const std::string& mode,
+    PlayerState state
+)
+{
+    if (song == nullptr)
+    {
+        printCenteredMessage("No song selected.");
         return;
     }
 
-    const int idWidth = 5;
-    const int titleWidth = 22;
-    const int artistWidth = 16;
-    const int albumWidth = 16;
-    const int durationWidth = 10;
+    keyValue("Title", song->getTitle());
 
-    std::cout << "  \u250C";
-    for (int i = 0; i < idWidth; ++i) std::cout << "\u2500"; std::cout << "\u252C";
-    for (int i = 0; i < titleWidth; ++i) std::cout << "\u2500"; std::cout << "\u252C";
-    for (int i = 0; i < artistWidth; ++i) std::cout << "\u2500"; std::cout << "\u252C";
-    for (int i = 0; i < albumWidth; ++i) std::cout << "\u2500"; std::cout << "\u252C";
-    for (int i = 0; i < durationWidth; ++i) std::cout << "\u2500"; std::cout << "\u2510" << std::endl;
+    keyValue("Artist", song->getArtist());
 
-    std::cout << "  \u2502"
-              << std::left << std::setfill(' ') << std::setw(idWidth) << "  #" << "\u2502"
-              << std::setw(titleWidth) << " Title" << "\u2502"
-              << std::setw(artistWidth) << " Artist" << "\u2502"
-              << std::setw(albumWidth) << " Album" << "\u2502"
-              << std::setw(durationWidth) << " Duration" << "\u2502" << std::endl;
+    keyValue(
+        "Album",
+        song->getAlbum()
+    );
 
-    std::cout << "  \u251C";
-    for (int i = 0; i < idWidth; ++i) std::cout << "\u2500"; std::cout << "\u253C";
-    for (int i = 0; i < titleWidth; ++i) std::cout << "\u2500"; std::cout << "\u253C";
-    for (int i = 0; i < artistWidth; ++i) std::cout << "\u2500"; std::cout << "\u253C";
-    for (int i = 0; i < albumWidth; ++i) std::cout << "\u2500"; std::cout << "\u253C";
-    for (int i = 0; i < durationWidth; ++i) std::cout << "\u2500"; std::cout << "\u2524" << std::endl;
+    keyValue(
+        "Genre",
+        song->getGenre()
+    );
 
-    int count = 0;
-    for (size_t i = 0; i < songs.size() && count < maxDisplay; ++i) {
-        if (songs[i] == nullptr) continue;
-        count++;
+    separator();
 
-        std::cout << "  \u2502"
-                  << std::right << std::setw(idWidth - 2) << count << "  \u2502"
-                  << std::left << std::setw(titleWidth) << (" " + truncate(songs[i]->getTitle(), titleWidth - 2)) << "\u2502"
-                  << std::setw(artistWidth) << (" " + truncate(songs[i]->getArtist(), artistWidth - 2)) << "\u2502"
-                  << std::setw(albumWidth) << (" " + truncate(songs[i]->getAlbum(), albumWidth - 2)) << "\u2502"
-                  << std::setw(durationWidth) << ("  " + songs[i]->getFormattedDuration()) << "\u2502" << std::endl;
-    }
+    playbackState(state);
 
-    std::cout << "  \u2514";
-    for (int i = 0; i < idWidth; ++i) std::cout << "\u2500"; std::cout << "\u2534";
-    for (int i = 0; i < titleWidth; ++i) std::cout << "\u2500"; std::cout << "\u2534";
-    for (int i = 0; i < artistWidth; ++i) std::cout << "\u2500"; std::cout << "\u2534";
-    for (int i = 0; i < albumWidth; ++i) std::cout << "\u2500"; std::cout << "\u2534";
-    for (int i = 0; i < durationWidth; ++i) std::cout << "\u2500"; std::cout << "\u2518" << std::endl;
+    doubleKeyValue(
+        "Playlist",
+        playlist,
+        "Mode",
+        mode
+    );
+
+    keyValue(
+        "Duration",
+        formatDuration(song->getDurationSec())
+    );
 }
 
-void UIRenderer::printPlaylistList(const std::vector<Playlist>& playlists) const {
-    if (playlists.empty()) {
-        printMessage("  No playlists available.");
-        return;
-    }
 
-    const int idWidth = 5;
-    const int nameWidth = 30;
-    const int countWidth = 15;
 
-    std::cout << "  \u250C";
-    for (int i = 0; i < idWidth; ++i) std::cout << "\u2500"; std::cout << "\u252C";
-    for (int i = 0; i < nameWidth; ++i) std::cout << "\u2500"; std::cout << "\u252C";
-    for (int i = 0; i < countWidth; ++i) std::cout << "\u2500"; std::cout << "\u2510" << std::endl;
+void UIRenderer::showMainMenu(
+    const std::string& lastSong
+)
+{
+    clear();
 
-    std::cout << "  \u2502"
-              << std::left << std::setfill(' ') << std::setw(idWidth) << "  #" << "\u2502"
-              << std::setw(nameWidth) << " Playlist Name" << "\u2502"
-              << std::setw(countWidth) << " Total Songs" << "\u2502" << std::endl;
+    mainMenuHeader(lastSong);
 
-    std::cout << "  \u251C";
-    for (int i = 0; i < idWidth; ++i) std::cout << "\u2500"; std::cout << "\u253C";
-    for (int i = 0; i < nameWidth; ++i) std::cout << "\u2500"; std::cout << "\u253C";
-    for (int i = 0; i < countWidth; ++i) std::cout << "\u2500"; std::cout << "\u2524" << std::endl;
+    menuItem(1, "Now Playing");
+    menuItem(2, "Playlists");
+    menuItem(3, "Browse Playlist");
+    menuItem(4, "Settings");
 
-    for (size_t i = 0; i < playlists.size(); ++i) {
-        std::cout << "  \u2502"
-                  << std::right << std::setw(idWidth - 2) << (i + 1) << "  \u2502"
-                  << std::left << std::setw(nameWidth) << (" " + truncate(playlists[i].getName(), nameWidth - 2)) << "\u2502"
-                  << std::right << std::setw(countWidth - 3) << playlists[i].size() << "   \u2502" << std::endl;
-    }
+    footer("0. Quit (saves state)");
 
-    std::cout << "  \u2514";
-    for (int i = 0; i < idWidth; ++i) std::cout << "\u2500"; std::cout << "\u2534";
-    for (int i = 0; i < nameWidth; ++i) std::cout << "\u2500"; std::cout << "\u2534";
-    for (int i = 0; i < countWidth; ++i) std::cout << "\u2500"; std::cout << "\u2518" << std::endl;
+    endWindow();
+
+    prompt("Choice:");
 }
 
-void UIRenderer::printNowPlaying(const Song* song, float currentTime, float totalTime) const {
-    if (song == nullptr) {
-        printMessage("  No song is currently playing.");
-        return;
-    }
-    
-    std::cout << std::endl;
-    std::cout << "  \u266B " << song->getTitle() << std::endl; 
-    std::cout << "  Artist: " << song->getArtist() << std::endl;
-    std::cout << "  Album: " << song->getAlbum() << std::endl;
-    std::cout << "  Duration: " << formatDuration(song->getDurationSec()) << std::endl;
-    std::cout << std::endl;
-    
-    int currentMin = static_cast<int>(currentTime) / 60;
-    int currentSec = static_cast<int>(currentTime) % 60;
-    int totalMin = static_cast<int>(totalTime) / 60;
-    int totalSec = static_cast<int>(totalTime) % 60;
-    
-    std::cout << "  Time: " << std::setw(2) << std::setfill('0') << currentMin << ":"
-              << std::setw(2) << std::setfill('0') << currentSec << " / "
-              << std::setw(2) << std::setfill('0') << totalMin << ":"
-              << std::setw(2) << std::setfill('0') << totalSec 
-              << std::setfill(' ') << std::endl; 
-    
+
+
+void UIRenderer::showPlaylistMenu()
+{
+    footer(
+        "Enter playlist number. [0] Back"
+    );
+
+    endWindow();
+
+    prompt("Choice:");
 }
 
-void UIRenderer::printSettings(const std::string& currentMode) const {
-    std::cout << "  Playback Mode (current: " << currentMode << ")" << std::endl;
-    drawHorizontalLine("\u2500", 45);  
-    std::cout << std::endl;
-    std::cout << "  1. NO_REPEAT  - play in order, stop at end" << std::endl;
-    std::cout << "  2. REPEAT_ONE - repeat current song forever" << std::endl;
-    std::cout << "  3. REPEAT_ALL - loop whole playlist" << std::endl;
-    std::cout << "  4. SHUFFLE    - random order";
-    if (currentMode == "SHUFFLE") {
-        std::cout << " \u25C0 (active)"; 
-    }
-    std::cout << std::endl;
+
+
+void UIRenderer::showBrowseMenu()
+{
+    browseFooter();
+
+    endWindow();
+
+    prompt("Choice:");
 }
 
-std::string UIRenderer::formatDuration(int seconds) const {
-    int min = seconds / 60;
-    int sec = seconds % 60;
-    
-    std::string result;
-    result += (min < 10 ? "0" : "") + std::to_string(min);
-    result += ":";
-    result += (sec < 10 ? "0" : "") + std::to_string(sec);
-    return result;
+
+
+void UIRenderer::showNowPlayingMenu()
+{
+    nowPlayingFooter();
+
+    endWindow();
+
+    prompt("Choice:");
 }
 
-std::string UIRenderer::truncate(const std::string& str, size_t maxLen) const {
-    if (str.length() <= maxLen) {
-        return str;
-    }
-    return str.substr(0, maxLen - 3) + "...";
+
+
+void UIRenderer::showSettingsMenu(
+    const std::string& mode
+)
+{
+    clear();
+
+    settingsHeader(mode);
+
+    settingsMenu(mode);
+
+    endWindow();
+
+    prompt("Choice:");
 }
+
+
+
+void UIRenderer::showFilterMenu()
+{
+    filterMenu();
+
+    endWindow();
+
+    prompt("Choice:");
+}
+
+
+
+void UIRenderer::drawTitleRow(
+    const std::string& title
+)
+{
+    separator();
+
+    centerLine(title);
+
+    separator();
+}
+
+
+
+void UIRenderer::drawSubTitle(
+    const std::string& title
+)
+{
+    textLine(title);
+}
+
+
+
+void UIRenderer::drawSeparator()
+{
+    separator();
+}
+
+
+
+void UIRenderer::newline()
+{
+    std::cout << '\n';
+}
+
+
+
+void UIRenderer::flush()
+{
+    std::cout.flush();
+}
+
+
+
+void UIRenderer::pauseScreen()
+{
+    waitForEnter();
+}
+
+
+
+void UIRenderer::showApplicationHeader()
+{
+    clear();
+
+    beginWindow(
+        "♫ Terminal Music Player ♫"
+    );
+}
+
+
+
+void UIRenderer::showApplicationFooter()
+{
+    endWindow();
+}
+
+
+
+void UIRenderer::showExitMessage()
+{
+    clear();
+
+    beginWindow(
+        "♫ Terminal Music Player ♫"
+    );
+
+    blank();
+
+    centerLine(
+        "Thank you for using"
+    );
+
+    centerLine(
+        "Terminal Music Player"
+    );
+
+    blank();
+
+    endWindow();
+}
+
+
+
+// =========================
+// END OF UIRenderer.cpp
+// =========================
