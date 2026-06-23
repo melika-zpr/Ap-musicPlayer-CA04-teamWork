@@ -16,7 +16,7 @@ void NowPlayingScreen::render() {
     
     // اگر آهنگی در حال پخش نیست
     if (currentSong == nullptr) {
-        ui_->printNowPlaying(nullptr, 0.0f, 0.0f, true, "NO_REPEAT");
+        ui_->printNowPlaying(nullptr, 0.0f, 0.0f, true, "NO_REPEAT", "None");
     } else {
         // محاسبه زمان‌ها بر اساس متدهایی که در کد قبلی داشتی
         float currentTime = static_cast<float>(player_->getCurrentPosition());
@@ -29,7 +29,8 @@ void NowPlayingScreen::render() {
             currentTime, 
             totalTime, 
             isPaused, 
-            ConfigManager::modeToDisplayString(config_->getPlaybackMode()) // تبدیل enum به string
+            ConfigManager::modeToDisplayString(config_->getPlaybackMode()), // تبدیل enum به string
+            player_->getCurrentPlaylist() ? player_->getCurrentPlaylist()->getName() : "None"
         );
     }
 }

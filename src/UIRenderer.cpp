@@ -1,3 +1,5 @@
+// UIRenderer.cpp
+
 #include "UIRenderer.h"
 #include "Song.h"
 #include "Playlist.h"
@@ -183,7 +185,7 @@ void UIRenderer::printSongList(const std::vector<Song *> &songs, int maxDisplay)
         std::cout << "\u2500";
     std::cout << "\u2518" << std::endl;
 }
-void UIRenderer::printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused, const std::string& mode) const
+void UIRenderer::printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused, const std::string& mode, const std::string& playlistName) const
 {
     clearScreen(); 
     std::cout << std::endl;
@@ -262,7 +264,7 @@ void UIRenderer::printNowPlaying(const Song *song, float currentTime, float tota
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
 
     std::string statusVal = isPaused ? "⏸  PAUSED " : "▶  PLAYING";
-    std::string playlistVal = "Playlist: rock_hits"; 
+    std::string playlistVal = "Playlist: " + playlistName;
     std::string statusLeft = " " + BAR_YELLOW + " " + SHIT_YELLOW + statusVal;
     int statusSpaces = INNER_WIDTH - visual_len(statusLeft) - visual_len(playlistVal) - 1;
     printLine(statusLeft + std::string(statusSpaces > 0 ? statusSpaces : 0, ' ') + SHIT_YELLOW + playlistVal + " ");

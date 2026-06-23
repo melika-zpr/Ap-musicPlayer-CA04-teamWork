@@ -1,3 +1,5 @@
+// UIRenderer.h
+
 #pragma once
 
 #include <string>
@@ -40,11 +42,10 @@ public:
     
     void printPlaylistList(const std::vector<PlaylistInfo>& playlists) const;
     
-    void printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused, const std::string& currentMode) const;    void printMainMenu(const std::string& lastPlayedSong) const;
-    void printSettings(const std::string& currentMode) const;
-    void printPlaylistList(const std::vector<std::string>& playlistNames) const;
+    void printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused, const std::string& mode, const std::string& playlistName) const;    void printSettings(const std::string& currentMode) const;
     void printPlaylistView(const std::string& playlistName, const std::vector<TrackInfo>& tracks) const;
     void printSettingsView(const std::string& currentModeStr) const;
+    void printMainMenu(const std::string& lastPlayedSong) const;  // ← add this
 
 private:
     std::string formatDuration(int seconds) const;
