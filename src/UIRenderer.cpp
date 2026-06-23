@@ -19,6 +19,24 @@ namespace
 
     const std::string H = "─";
     const std::string V = "│";
+
+}
+
+// تعداد ستون‌های نمایشی یک رشته UTF-8 را برمی‌گرداند.
+// کاراکترهای 3 بایتی مثل ♫ ▶ ◀ █ ░ ─ │ هر کدام 1 ستون نمایشی دارند.
+static int displayWidth(const std::string& str)
+{
+    int width = 0;
+    for (size_t i = 0; i < str.size(); )
+    {
+        unsigned char c = str[i];
+        if (c < 0x80)        { ++width; ++i; }   // ASCII: 1 بایت، 1 ستون
+        else if (c < 0xC0)   { ++i; }             // بایت ادامه‌دار: رد کن
+        else if (c < 0xE0)   { ++width; i += 2; } // 2 بایتی: 1 ستون
+        else if (c < 0xF0)   { ++width; i += 3; } // 3 بایتی: 1 ستون
+        else                  { width += 2; i += 4; } // 4 بایتی (emoji): 2 ستون
+    }
+    return width;
 }
 
 static std::string repeat(const std::string& s, int count)
@@ -36,11 +54,12 @@ static std::string centerText(
     int width
 )
 {
-    if ((int)text.length() >= width)
-        return text.substr(0, width);
+    int dw = displayWidth(text);
+    if (dw >= width)
+        return text;
 
-    int left = (width - text.length()) / 2;
-    int right = width - text.length() - left;
+    int left  = (width - dw) / 2;
+    int right =  width - dw  - left;
 
     return std::string(left, ' ')
         + text
@@ -52,10 +71,11 @@ static std::string leftText(
     int width
 )
 {
-    if ((int)text.length() >= width)
-        return text.substr(0, width);
+    int dw = displayWidth(text);
+    if (dw >= width)
+        return text;
 
-    return text + std::string(width - text.length(), ' ');
+    return text + std::string(width - dw, ' ');
 }
 
 static std::string rightText(
@@ -63,10 +83,11 @@ static std::string rightText(
     int width
 )
 {
-    if ((int)text.length() >= width)
-        return text.substr(0, width);
+    int dw = displayWidth(text);
+    if (dw >= width)
+        return text;
 
-    return std::string(width - text.length(), ' ')
+    return std::string(width - dw, ' ')
         + text;
 }
 
@@ -574,20 +595,21 @@ void UIRenderer::tableRow(
     for (size_t i = 0; i < values.size(); ++i)
     {
         std::string value = values[i];
+        int dw = displayWidth(value);
 
-        if ((int)value.length() > widths[i])
+        // اگر متن بیشتر از عرض ستون بود، کوتاه کن
+        if (dw > widths[i])
         {
-            if (widths[i] >= 4)
-                value =
-                    value.substr(0, widths[i] - 3) + "...";
-            else
-                value =
-                    value.substr(0, widths[i]);
+            // از انتها حذف کن تا displayWidth مناسب بشه
+            while (displayWidth(value) > widths[i] - 3 && !value.empty())
+                value.pop_back();
+            value += "...";
+            dw = displayWidth(value);
         }
 
-        row << std::left
-            << std::setw(widths[i])
-            << value;
+        // padding دستی به جای setw (چون setw بایت‌محور است)
+        row << value
+            << std::string(widths[i] - dw, ' ');
 
         if (i != values.size() - 1)
             row << " │ ";
