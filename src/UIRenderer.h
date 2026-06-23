@@ -40,13 +40,12 @@ public:
     
     void printPlaylistList(const std::vector<PlaylistInfo>& playlists) const;
     
-    void printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused) const;
-    void printMainMenu(const std::string& lastPlayedSong) const;
+    void printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused, const std::string& currentMode) const;    void printMainMenu(const std::string& lastPlayedSong) const;
     void printSettings(const std::string& currentMode) const;
     void printPlaylistList(const std::vector<std::string>& playlistNames) const;
     void printPlaylistView(const std::string& playlistName, const std::vector<TrackInfo>& tracks) const;
     void printSettingsView(const std::string& currentModeStr) const;
-    
+
 private:
     std::string formatDuration(int seconds) const;
     std::string truncate(const std::string& str, size_t maxLen) const;

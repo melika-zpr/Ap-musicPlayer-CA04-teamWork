@@ -42,7 +42,7 @@ Application::Application() {
 
 Application::~Application() {
     if (player_.getCurrentSong() != nullptr) {
-        config_.setLastSong(player_.getCurrentSong()->getFilePath());
+        config_.setLastSong(player_.getCurrentSong()->getTitle());
     }
     config_.setPlaybackMode(player_.getPlaybackMode());
     if (player_.getCurrentPlaylist() != nullptr) {

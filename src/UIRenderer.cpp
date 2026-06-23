@@ -183,13 +183,11 @@ void UIRenderer::printSongList(const std::vector<Song *> &songs, int maxDisplay)
         std::cout << "\u2500";
     std::cout << "\u2518" << std::endl;
 }
-
-void UIRenderer::printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused) const
+void UIRenderer::printNowPlaying(const Song *song, float currentTime, float totalTime, bool isPaused, const std::string& mode) const
 {
     clearScreen(); 
     std::cout << std::endl;
 
-    // کدهای رنگی ANSI
     const std::string RESET        = "\033[0m";
     const std::string BORDER_BLUE  = "\033[38;5;111m"; 
     const std::string TEXT_WHITE   = "\033[97m";       
@@ -215,14 +213,8 @@ void UIRenderer::printNowPlaying(const Song *song, float currentTime, float tota
         int len = 0;
         bool in_ansi = false;
         for (size_t i = 0; i < str.length(); ++i) {
-            if (str[i] == '\033') {
-                in_ansi = true;
-                continue;
-            }
-            if (in_ansi) {
-                if (std::isalpha(str[i])) in_ansi = false;
-                continue;
-            }
+            if (str[i] == '\033') { in_ansi = true; continue; }
+            if (in_ansi) { if (std::isalpha(str[i])) in_ansi = false; continue; }
             unsigned char c = str[i];
             if ((c & 0xC0) != 0x80) len++;
         }
@@ -233,9 +225,7 @@ void UIRenderer::printNowPlaying(const Song *song, float currentTime, float tota
         int current_vis_len = visual_len(content);
         int padding = INNER_WIDTH - current_vis_len;
         std::cout << BORDER_BLUE << "  ║" << RESET << content;
-        if (padding > 0) {
-            std::cout << std::string(padding, ' ');
-        }
+        if (padding > 0) std::cout << std::string(padding, ' ');
         std::cout << BORDER_BLUE << "║" << RESET << std::endl;
     };
 
@@ -246,13 +236,11 @@ void UIRenderer::printNowPlaying(const Song *song, float currentTime, float tota
         return;
     }
 
-    // 1. هدر اصلی
     std::cout << BORDER_BLUE << "  ╔" << repeatStr("═", INNER_WIDTH) << "╗" << RESET << std::endl;
     std::string headerText = "♫  Terminal Music Player  ♫";
     int headPad = (INNER_WIDTH - visual_len(headerText)) / 2;
     printLine(std::string(headPad, ' ') + TEXT_WHITE + headerText);
 
-    // 2. اطلاعات آهنگ
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
     printLine(" " + BAR_WHITE + " " + TEXT_WHITE + "Now Playing");
 
@@ -271,18 +259,24 @@ void UIRenderer::printNowPlaying(const Song *song, float currentTime, float tota
     std::string genreVal = "Rock"; 
     printLine(" " + BAR_GRAY + TEXT_GRAY + " Genre  : " + TEXT_GRAY + genreVal);
 
-    // 3. وضعیت پخش (تغییر دینامیک بر اساس وضعیت پلیر)
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
 
-    // تشخیص وضعیت PLAYING یا PAUSED
     std::string statusVal = isPaused ? "⏸  PAUSED " : "▶  PLAYING";
     std::string playlistVal = "Playlist: rock_hits"; 
     std::string statusLeft = " " + BAR_YELLOW + " " + SHIT_YELLOW + statusVal;
     int statusSpaces = INNER_WIDTH - visual_len(statusLeft) - visual_len(playlistVal) - 1;
     printLine(statusLeft + std::string(statusSpaces > 0 ? statusSpaces : 0, ' ') + SHIT_YELLOW + playlistVal + " ");
 
-    // نمایش زمان واقعی سپری شده / زمان کل آهنگ
-    std::string modeVal = "Mode: SHUFFLE";
+    // --- منطق داینامیک جدید برای نمایش Mode ---
+    std::string displayMode = mode;
+    if (mode == "NO_REPEAT") displayMode = "No Repeat";
+    else if (mode == "REPEAT_ONE") displayMode = "Repeat One";
+    else if (mode == "REPEAT_ALL") displayMode = "Repeat All";
+    else if (mode == "SHUFFLE") displayMode = "Shuffle";
+
+    std::string modeVal = "Mode: " + displayMode;
+    // ------------------------------------------
+
     int curMin = static_cast<int>(currentTime) / 60;
     int curSec = static_cast<int>(currentTime) % 60;
     int totMin = static_cast<int>(totalTime) / 60;
@@ -295,17 +289,13 @@ void UIRenderer::printNowPlaying(const Song *song, float currentTime, float tota
     int modeSpaces = INNER_WIDTH - visual_len(modeLeft) - visual_len(timeStr) - 1;
     printLine(modeLeft + std::string(modeSpaces > 0 ? modeSpaces : 0, ' ') + TEXT_GRAY + timeStr + " ");
 
-    // 4. فوتر دکمه‌ها
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
-
     std::string foot1 = "[p] play/pause  [s] stop  [n] next  [b] prev";
     int f1Pad = (INNER_WIDTH - visual_len(foot1)) / 2;
     printLine(std::string(f1Pad, ' ') + DIM_FOOTER + foot1);
-
     std::string foot2 = "[f] fwd 10s   [r] bwd 10s   [q] menu";
     int f2Pad = (INNER_WIDTH - visual_len(foot2)) / 2;
     printLine(std::string(f2Pad, ' ') + DIM_FOOTER + foot2);
-
     std::cout << BORDER_BLUE << "  ╚" << repeatStr("═", INNER_WIDTH) << "╝" << RESET << std::endl;
 }
 
@@ -667,6 +657,7 @@ void UIRenderer::printPlaylistView(const std::string& playlistName, const std::v
 
 void UIRenderer::printSettingsView(const std::string& currentModeStr) const
 {
+
     clearScreen(); 
     std::cout << std::endl;
 
@@ -706,6 +697,11 @@ void UIRenderer::printSettingsView(const std::string& currentModeStr) const
         std::cout << BORDER_BLUE << "║" << RESET << std::endl;
     };
 
+    auto toUpper = [](std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+    return s;
+    };
+
     // ۱. سقف جدول و هدر اصلی
     std::cout << BORDER_BLUE << "  ╔" << repeatStr("═", INNER_WIDTH) << "╗" << RESET << std::endl;
     std::string titleText = "Settings - Playback Mode";
@@ -717,15 +713,15 @@ void UIRenderer::printSettingsView(const std::string& currentModeStr) const
 
     // آرایه‌ای از نام گزینه‌ها و معادل‌های رشته‌ای آن‌ها در ConfigManager
     std::vector<std::pair<std::string, std::string>> modes = {
-        {"1. No Repeat", "No Repeat"},
-        {"2. Repeat One", "Repeat One"},
-        {"3. Repeat All", "Repeat All"},
-        {"4. Shuffle", "Shuffle"}
+        {"1. No Repeat", "NO_REPEAT"},
+        {"2. Repeat One", "REPEAT_ONE"},
+        {"3. Repeat All", "REPEAT_ALL"},
+        {"4. Shuffle",    "SHUFFLE"}
     };
 
     // ۲. رندر گزینه‌ها همراه با تیک وضعیت
     for (const auto& mode : modes) {
-        bool isActive = (currentModeStr == mode.second);
+        bool isActive = (toUpper(currentModeStr) == toUpper(mode.second));
         
         // قالب‌بندی نام گزینه با رنگ زرد زرد برای شماره‌ها
         std::string leftPart = "   " + OPTION_NUM + mode.first.substr(0, 2) + RESET + TEXT_WHITE + mode.first.substr(2);
