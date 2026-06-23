@@ -253,12 +253,12 @@ void UIRenderer::printNowPlaying(const Song *song, float currentTime, float tota
     printLine(" " + BAR_GRAY + TEXT_GRAY + " Artist : " + TEXT_WHITE + artistVal);
 
     std::string albumVal = truncate(song->getAlbum(), 32);
-    std::string yearVal = "[1975]"; 
+    std::string yearVal = "[" + std::to_string(song->getYear()) + "]";
     std::string albumLeft = " " + BAR_GRAY + TEXT_GRAY + " Album  : " + TEXT_GRAY + albumVal;
     int albumSpaces = INNER_WIDTH - visual_len(albumLeft) - visual_len(yearVal) - 1;
     printLine(albumLeft + std::string(albumSpaces > 0 ? albumSpaces : 0, ' ') + TEXT_GRAY + yearVal + " ");
 
-    std::string genreVal = "Rock"; 
+    std::string genreVal = song->getGenre().empty() ? "Unknown" : song->getGenre(); 
     printLine(" " + BAR_GRAY + TEXT_GRAY + " Genre  : " + TEXT_GRAY + genreVal);
 
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
