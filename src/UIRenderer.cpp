@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
+#include <algorithm> 
 
 #ifdef _WIN32
 #define CLEAR_CMD "cls"
