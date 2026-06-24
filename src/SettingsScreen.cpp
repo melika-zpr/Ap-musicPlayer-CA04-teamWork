@@ -26,6 +26,12 @@ ScreenType SettingsScreen::handleInput() {
     // دریافت انتخاب کاربر بدون چاپ متن اضافه (چون پرامپت را خود باکس چاپ کرده است)
     int choice = input_->getIntChoice("", 0, 4);
     
+     
+    if (choice == -2) {
+        ui_->printMessage(" \u2716 Invalid choice. Please try again.");
+        return ScreenType::SETTINGS;
+    }
+
     if (choice == 0) {
         config_->save();
         return ScreenType::MAIN_MENU;
