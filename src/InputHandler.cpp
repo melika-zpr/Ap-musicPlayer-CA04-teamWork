@@ -9,31 +9,26 @@
 
 char InputHandler::getNonBlockingCharKey() {
 #ifdef _WIN32
-    // اگر کلیدی روی کیبورد فشرده شده باشد
     if (_kbhit()) {
         char key = static_cast<char>(_getch());
-        return std::tolower(key); // برای راحتی کار حروف کوچک برگردانده می‌شود
+        return std::tolower(key); 
     }
 #endif
-    // اگر هیچ کلیدی فشرده نشده باشد، کاراکتر نال برمی‌گردد
+
     return '\0'; 
 }
 
 int InputHandler::getIntChoice(const std::string& prompt, int min, int max) {
-   // گرفتن کلید بدون قفل شدن برنامه
     char key = getNonBlockingCharKey();
     
-    // اگر در این فریم کلیدی فشرده نشده باشد
     if (key == '\0') {
         return -1; 
     }
     
-    // بازگشت با کلید 0
     if (key == '0') {
         return 0;
     }
     
-    // تبدیل کاراکتر (مثل '1') به عدد ریاضی (1)
     if (key >= '1' && key <= '9') {
         int choice = key - '0';
         if (choice >= min && choice <= max) {
@@ -41,10 +36,8 @@ int InputHandler::getIntChoice(const std::string& prompt, int min, int max) {
         }
     }
     
-    // پاک کردن بافر بعد از دریافت عدد
-   // std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     
-    return -2; // ورودی نامعتبر
+    return -2; 
 }
 
 std::string InputHandler::getStringInput(const std::string& prompt) {
@@ -52,7 +45,6 @@ std::string InputHandler::getStringInput(const std::string& prompt) {
     std::cout << prompt;
     
     #ifdef _WIN32
-    // تخلیه کامل بافر از دکمه‌های قبلی که با _kbhit گیر کرده‌اند
     while (_kbhit()) {
         _getch();
     }

@@ -32,14 +32,10 @@ Application::Application() {
     // پاکسازی واقعی صفحه فقط برای بار اول
     std::system("cls");
     
+    config_.load();
     loadData();
     setupScreens();
-    
-    if (!playlists_.empty()) {
-        player_.loadPlaylist(&playlists_[0]);
-    }
-    
-    config_.load();
+
     player_.setPlaybackMode(config_.getPlaybackMode());
     
     changeScreen(ScreenType::MAIN_MENU);
@@ -69,10 +65,34 @@ void Application::loadData() {
     M3uLoader::loadPlaylists("Data/Playlists", library_, playlists_, errors);
     
     std::string activeName = config_.getActivePlaylist();
+    Playlist* targetPlaylist = nullptr;
+
     for (auto& playlist : playlists_) {
         if (playlist.getName() == activeName) {
-            player_.loadPlaylist(&playlist);
+            targetPlaylist = &playlist;
             break;
+        }
+    }
+    // اگر پلی‌لیست ذخیره‌شده معتبر نبود یا پیدا نشد، به عنوان بک‌آپ اولین پلی‌لیست را لود کن
+    if (targetPlaylist == nullptr && !playlists_.empty()) {
+        targetPlaylist = &playlists_[0];
+    }
+    
+    // بارگذاری نهایی پلی‌لیست در پلیر و هماهنگ‌سازی آهنگ ذخیره شده
+    if (targetPlaylist != nullptr) {
+        player_.loadPlaylist(targetPlaylist);
+        
+        // اصلاح بزرگ دوم: پیدا کردن دقیق آخرین آهنگ پخش شده در این پلی‌لیست
+        std::string lastSongTitle = config_.getLastSong();
+        if (!lastSongTitle.empty()) {
+            const auto& songs = targetPlaylist->getSongs();
+            for (size_t i = 0; i < songs.size(); ++i) {
+                if (songs[i] && songs[i]->getTitle() == lastSongTitle) {
+                    player_.setCurrentIndex(static_cast<int>(i));
+                    player_.stop(); // آهنگ روی پلیر آماده قرار می‌گیرد اما خودکار پخش نمی‌شود تا کاربر دکمه بزند
+                    break;
+                }
+            }
         }
     }
 }

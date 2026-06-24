@@ -10,7 +10,6 @@ void MainMenuScreen::render()
     std::string lastSong = "None";
     if (config_ != nullptr)
     {
-        // این همان رشته‌ای است که در فایل تنظیمات ذخیره شده
         std::string savedTitle = config_->getLastSong();
         if (!savedTitle.empty())
         {
@@ -48,7 +47,6 @@ ScreenType MainMenuScreen::handleInput()
     case 0:
         if (config_ != nullptr && player_ != nullptr && player_->getCurrentSong() != nullptr)
         {
-            // تغییر از getFilePath به getTitle:
             config_->setLastSong(player_->getCurrentSong()->getTitle());
         }
         if (config_ != nullptr)
