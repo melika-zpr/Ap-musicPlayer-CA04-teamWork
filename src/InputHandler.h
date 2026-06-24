@@ -20,6 +20,7 @@ public:
     bool isValidRange(int value, int min, int max) const;
     
     void clearError();
+    char getNonBlockingCharKey();
     
 private:
     std::string trim(const std::string& str) const;

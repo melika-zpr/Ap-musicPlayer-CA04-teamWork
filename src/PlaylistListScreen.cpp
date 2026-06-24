@@ -39,6 +39,16 @@ void PlaylistListScreen::render() {
 ScreenType PlaylistListScreen::handleInput() {
     int maxChoice = (playlists_ != nullptr) ? static_cast<int>(playlists_->size()) : 0;
     int choice = input_->getIntChoice("", 0, maxChoice);
+
+    // اضافه کردن این شرط بسیار حیاتی است: اگر کلیدی زده نشد، روی همین صفحه بمان
+    if (choice == -1 ) {
+        return ScreenType::PLAYLIST_LIST; 
+    }
+
+    if (choice == -2) {
+        ui_->printMessage(" \u2716 Invalid choice. Please try again.");
+        return ScreenType::PLAYLIST_LIST;
+    }
     
     if (choice == 0) {
         return ScreenType::MAIN_MENU;
