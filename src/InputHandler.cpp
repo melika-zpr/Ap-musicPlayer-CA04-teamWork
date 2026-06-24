@@ -3,6 +3,22 @@
 #include <limits>
 #include <algorithm>
 
+#ifdef _WIN32
+#include <conio.h>
+#endif
+
+char InputHandler::getNonBlockingCharKey() {
+#ifdef _WIN32
+    // اگر کلیدی روی کیبورد فشرده شده باشد
+    if (_kbhit()) {
+        char key = static_cast<char>(_getch());
+        return std::tolower(key); // برای راحتی کار حروف کوچک برگردانده می‌شود
+    }
+#endif
+    // اگر هیچ کلیدی فشرده نشده باشد، کاراکتر نال برمی‌گردد
+    return '\0'; 
+}
+
 int InputHandler::getIntChoice(const std::string& prompt, int min, int max) {
     int choice;
     bool valid = false;
@@ -75,3 +91,4 @@ std::string InputHandler::trim(const std::string& str) const {
     size_t end = str.find_last_not_of(" \t\n\r\f\v");
     return str.substr(start, end - start + 1);
 }
+

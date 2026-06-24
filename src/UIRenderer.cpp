@@ -9,14 +9,37 @@
 #include <algorithm> 
 
 #ifdef _WIN32
+#include <windows.h>
 #define CLEAR_CMD "cls"
 #else
 #define CLEAR_CMD "clear"
 #endif
 
-void UIRenderer::clearScreen() const
-{
-    std::system(CLEAR_CMD);
+void UIRenderer::hideCursor() const {
+#ifdef _WIN32
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO info;
+    info.dwSize = 100;
+    info.bVisible = FALSE; // کرسر را مخفی می‌کند
+    SetConsoleCursorInfo(consoleHandle, &info);
+#else
+    std::cout << "\033[?25l"; 
+#endif
+}
+
+void UIRenderer::gotoxy(int x, int y) const {
+#ifdef _WIN32
+    COORD coord;
+    coord.X = x;
+    coord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+#else
+    std::cout << "\033[" << (y + 1) << ";" << (x + 1) << "H"; 
+#endif
+}
+
+void UIRenderer::clearScreen() const {
+    gotoxy(0, 0); 
 }
 
 void UIRenderer::drawHorizontalLine(const std::string &ch, int width) const

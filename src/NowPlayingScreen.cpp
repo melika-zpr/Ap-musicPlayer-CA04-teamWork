@@ -38,7 +38,13 @@ void NowPlayingScreen::render() {
 ScreenType NowPlayingScreen::handleInput() {
     if (player_ == nullptr) return ScreenType::MAIN_MENU;
 
-    char key = input_->getCharKey("");
+    // به جای getCharKey از نسخه غیرمسدودکننده استفاده می‌کنیم
+    char key = input_->getNonBlockingCharKey();
+
+    // اگر کلیدی فشرده نشده بود، روی همین صفحه بمان تا حلقه به چرخش خود ادامه دهد
+    if (key == '\0') {
+        return ScreenType::NOW_PLAYING;
+    }
 
     switch (key) {
         case 'p':
@@ -85,6 +91,6 @@ ScreenType NowPlayingScreen::handleInput() {
         default:
             break;
     }
-
+    
     return ScreenType::NOW_PLAYING;
 }

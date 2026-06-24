@@ -27,6 +27,11 @@
 
 
 Application::Application() {
+    // مخفی کردن کرسر در همان ابتدای اجرای برنامه
+    ui_.hideCursor(); 
+    // پاکسازی واقعی صفحه فقط برای بار اول
+    std::system("cls");
+    
     loadData();
     setupScreens();
     
@@ -132,13 +137,48 @@ void Application::changeScreen(ScreenType type) {
 }
 
 void Application::run() {
+    ScreenType lastScreen = ScreenType::EXIT;
+    int lastPosition = -1;
+    PlayerState lastState = PlayerState::Stopped;
+
+    ui_.hideCursor();
+
     while (isRunning_ && currentScreen_ != nullptr) {
+        // ۱. همیشه موزیک پلیر را آپدیت کن تا آهنگ بعدی خودکار پخش شود
         player_.tick();
-        currentScreen_->render();
+
+        // ۲. بررسی تغییرات برای جلوگیری از رندر بی‌جهت
+        bool screenChanged = (currentScreen_->getType() != lastScreen);
+        int currentPosition = player_.getCurrentPosition();
+        PlayerState currentState = player_.getState();
+        bool playerChanged = (currentPosition != lastPosition || currentState != lastState);
+
+        // ۱. حل مشکل روی هم افتادن: اگر صفحه عوض شد، کل بافر ترمینال را پاک کن
+        if (screenChanged) {
+            #ifdef _WIN32
+            std::system("cls");
+            #else
+            std::system("clear");
+            #endif
+        }
+
+        // ۳. رندر هوشمند: فقط وقتی صفحه عوض شده یا (در صفحه پخش) ثانیه/وضعیت تغییر کرده باشد
+        if (screenChanged || (currentScreen_->getType() == ScreenType::NOW_PLAYING && playerChanged)) {
+            currentScreen_->render();
+            
+            // ذخیره وضعیت فعلی برای مقایسه در دور بعدی
+            lastScreen = currentScreen_->getType();
+            lastPosition = currentPosition;
+            lastState = currentState;
+        }
+
+        // ۴. دریافت ورودی 
         ScreenType next = currentScreen_->handleInput();
         if (next != currentScreen_->getType()) {
             changeScreen(next);
         }
+
+        // ۵. استراحت حلقه
         SLEEP_MS(100);
     }
     config_.save();
