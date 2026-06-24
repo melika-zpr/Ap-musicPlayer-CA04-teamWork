@@ -36,9 +36,9 @@ Player::~Player()
     }
 }
 
-static bool loadSound(ma_engine* engine,
-                      ma_sound* sound,
-                      const std::string& path)
+static bool loadSound(ma_engine *engine,
+                      ma_sound *sound,
+                      const std::string &path)
 
 {
 
@@ -49,10 +49,9 @@ static bool loadSound(ma_engine* engine,
                nullptr,
                nullptr,
                sound) == MA_SUCCESS;
-
 }
 
-bool Player::loadPlaylist(Playlist* playlist)
+bool Player::loadPlaylist(Playlist *playlist)
 {
     if (playlist == nullptr || playlist->size() == 0)
         return false;
@@ -72,7 +71,7 @@ bool Player::loadPlaylist(Playlist* playlist)
     return true;
 }
 
-Song* Player::getCurrentSong() const
+Song *Player::getCurrentSong() const
 {
     if (currentPlaylist == nullptr)
         return nullptr;
@@ -98,7 +97,7 @@ void Player::play()
     if (!engineInitialized)
         return;
 
-    Song* song = getCurrentSong();
+    Song *song = getCurrentSong();
 
     if (!song)
         return;
@@ -166,15 +165,16 @@ void Player::stop()
     state = PlayerState::Stopped;
 }
 
-
 void Player::next()
 {
-    if (currentPlaylist == nullptr || currentPlaylist->isEmpty()) return;
+    if (currentPlaylist == nullptr || currentPlaylist->isEmpty())
+        return;
 
     if (playbackMode == PlaybackMode::SHUFFLE)
     {
-        std::random_device rd;
-        std::mt19937 rng(rd());
+        // استفاده از static برای جلوگیری از ریست شدن دنباله تصادفی
+        static std::random_device rd;
+        static std::mt19937 rng(rd());
         std::uniform_int_distribution<int> dist(0, currentPlaylist->size() - 1);
         currentIndex = dist(rng);
     }
@@ -204,7 +204,8 @@ void Player::next()
 
 void Player::previous()
 {
-    if (currentPlaylist == nullptr || currentPlaylist->isEmpty()) return;
+    if (currentPlaylist == nullptr || currentPlaylist->isEmpty())
+        return;
 
     if (playbackMode == PlaybackMode::SHUFFLE)
     {
@@ -323,11 +324,12 @@ int Player::getCurrentPosition() const
         return 0;
 
     ma_uint64 frames = 0;
-    ma_sound_get_cursor_in_pcm_frames(const_cast<ma_sound*>(&sound), &frames);
+    ma_sound_get_cursor_in_pcm_frames(const_cast<ma_sound *>(&sound), &frames);
 
-    return static_cast<int>(frames / ma_engine_get_sample_rate(const_cast<ma_engine*>(&engine)));
+    return static_cast<int>(frames / ma_engine_get_sample_rate(const_cast<ma_engine *>(&engine)));
 }
 
-PlayerState Player::getState() const {
+PlayerState Player::getState() const
+{
     return state;
 }

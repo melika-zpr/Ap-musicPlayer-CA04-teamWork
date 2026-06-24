@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
+#include <algorithm> 
 
 #ifdef _WIN32
 #define CLEAR_CMD "cls"
@@ -295,7 +296,7 @@ void UIRenderer::printNowPlaying(const Song *song, float currentTime, float tota
     std::string foot1 = "[p] play/pause  [s] stop  [n] next  [b] prev";
     int f1Pad = (INNER_WIDTH - visual_len(foot1)) / 2;
     printLine(std::string(f1Pad, ' ') + DIM_FOOTER + foot1);
-    std::string foot2 = "[f] fwd 10s   [r] bwd 10s   [q] menu";
+    std::string foot2 = "[r] \u2190 10s   [f] \u2192 10s   [q] menu";
     int f2Pad = (INNER_WIDTH - visual_len(foot2)) / 2;
     printLine(std::string(f2Pad, ' ') + DIM_FOOTER + foot2);
     std::cout << BORDER_BLUE << "  ╚" << repeatStr("═", INNER_WIDTH) << "╝" << RESET << std::endl;
