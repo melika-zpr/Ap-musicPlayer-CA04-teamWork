@@ -172,7 +172,6 @@ void Player::next()
 
     if (playbackMode == PlaybackMode::SHUFFLE)
     {
-        // استفاده از static برای جلوگیری از ریست شدن دنباله تصادفی
         static std::random_device rd;
         static std::mt19937 rng(rd());
         std::uniform_int_distribution<int> dist(0, currentPlaylist->size() - 1);

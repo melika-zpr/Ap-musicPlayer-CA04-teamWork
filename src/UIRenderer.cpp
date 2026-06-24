@@ -1,4 +1,3 @@
-// UIRenderer.cpp
 
 #include "UIRenderer.h"
 #include "Song.h"
@@ -9,14 +8,37 @@
 #include <algorithm> 
 
 #ifdef _WIN32
+#include <windows.h>
 #define CLEAR_CMD "cls"
 #else
 #define CLEAR_CMD "clear"
 #endif
 
-void UIRenderer::clearScreen() const
-{
-    std::system(CLEAR_CMD);
+void UIRenderer::hideCursor() const {
+#ifdef _WIN32
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO info;
+    info.dwSize = 100;
+    info.bVisible = FALSE; 
+    SetConsoleCursorInfo(consoleHandle, &info);
+#else
+    std::cout << "\033[?25l"; 
+#endif
+}
+
+void UIRenderer::gotoxy(int x, int y) const {
+#ifdef _WIN32
+    COORD coord;
+    coord.X = x;
+    coord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+#else
+    std::cout << "\033[" << (y + 1) << ";" << (x + 1) << "H"; 
+#endif
+}
+
+void UIRenderer::clearScreen() const {
+    gotoxy(0, 0); 
 }
 
 void UIRenderer::drawHorizontalLine(const std::string &ch, int width) const
@@ -270,7 +292,6 @@ void UIRenderer::printNowPlaying(const Song *song, float currentTime, float tota
     int statusSpaces = INNER_WIDTH - visual_len(statusLeft) - visual_len(playlistVal) - 1;
     printLine(statusLeft + std::string(statusSpaces > 0 ? statusSpaces : 0, ' ') + SHIT_YELLOW + playlistVal + " ");
 
-    // --- منطق داینامیک جدید برای نمایش Mode ---
     std::string displayMode = mode;
     if (mode == "NO_REPEAT") displayMode = "No Repeat";
     else if (mode == "REPEAT_ONE") displayMode = "Repeat One";
@@ -278,7 +299,6 @@ void UIRenderer::printNowPlaying(const Song *song, float currentTime, float tota
     else if (mode == "SHUFFLE") displayMode = "Shuffle";
 
     std::string modeVal = "Mode: " + displayMode;
-    // ------------------------------------------
 
     int curMin = static_cast<int>(currentTime) / 60;
     int curSec = static_cast<int>(currentTime) % 60;
@@ -349,7 +369,7 @@ void UIRenderer::printPlaylistList(const std::vector<PlaylistInfo>& playlists) c
     const std::string BORDER_BLUE  = "\033[38;5;111m"; 
     const std::string TEXT_WHITE   = "\033[97m";       
     const std::string TEXT_GRAY    = "\033[38;5;244m"; 
-    const std::string OPTION_NUM   = "\033[38;5;220m"; // زرد طلایی برای پلی‌لیست فعال
+    const std::string OPTION_NUM   = "\033[38;5;220m"; 
 
     const int INNER_WIDTH = 60; 
 
@@ -379,21 +399,18 @@ void UIRenderer::printPlaylistList(const std::vector<PlaylistInfo>& playlists) c
         std::cout << BORDER_BLUE << "║" << RESET << std::endl;
     };
 
-    // ۱. سقف جدول و هدر اصلی
     std::cout << BORDER_BLUE << "  ╔" << repeatStr("═", INNER_WIDTH) << "╗" << RESET << std::endl;
     std::string titleText = "Playlists";
     int titlePad = (INNER_WIDTH - visual_len(titleText)) / 2;
     printLine(std::string(titlePad, ' ') + TEXT_WHITE + titleText);
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
 
-    // ۲. هدر ستون‌های جدول (تراز ستون Songs در سمت راست)
     std::string colHeader = "  #   Name";
     std::string colSongs = "Songs";
     int colSpaces = INNER_WIDTH - visual_len(colHeader) - visual_len(colSongs) - 4;
     printLine(colHeader + std::string(colSpaces > 0 ? colSpaces : 0, ' ') + colSongs + "    ");
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
 
-    // ۳. رندر کردن دینامیک سطرها با استایل عکس ارسالی
     if (playlists.empty()) {
         printLine("");
         std::string emptyMsg = "No playlists available.";
@@ -404,21 +421,17 @@ void UIRenderer::printPlaylistList(const std::vector<PlaylistInfo>& playlists) c
         for (size_t i = 0; i < playlists.size(); ++i) {
             const auto& pl = playlists[i];
             
-            // انتخاب رنگ بر اساس فعال بودن یا نبودن پلی‌لیست
             std::string rowColor = pl.isActive ? OPTION_NUM : TEXT_GRAY;
             
-            // قالب‌بندی بخش چپ: شماره و نام پلی‌لیست
             std::string idxStr = std::to_string(i + 1);
             std::string nameStr = truncate(pl.name, 30);
             std::string leftPart = "  " + idxStr + "   " + nameStr;
             
-            // پدینگ ثابت برای تضمین تراز شدن ستون سمت راست (عرض بخش چپ و میانی = ۴۰ کاراکتر)
             int leftVis = visual_len(leftPart);
             if (leftVis < 40) {
                 leftPart += std::string(40 - leftVis, ' ');
             }
             
-            // قالب‌بندی بخش راست: آیکون پخش، تعداد آهنگ و کلمه [active]
             std::string rightPart = "";
             if (pl.isActive) {
                 char countBuf[32];
@@ -430,26 +443,22 @@ void UIRenderer::printPlaylistList(const std::vector<PlaylistInfo>& playlists) c
                 rightPart = countBuf;
             }
             
-            // پدینگ انتهایی برای چسبیدن به دیواره سمت راست
             std::string fullRow = rowColor + leftPart + rightPart;
             int totalVis = visual_len(fullRow);
-            int finalPadding = INNER_WIDTH - totalVis - 4; // ۴ کاراکتر فاصله امن از مارجین راست
+            int finalPadding = INNER_WIDTH - totalVis - 4; 
             
             printLine(rowColor + leftPart + rightPart + std::string(finalPadding > 0 ? finalPadding : 0, ' '));
         }
     }
 
-    // ۴. فوتر راهنما (بخش پایین جدول)
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
     std::string footLeft = "  Enter number to switch active playlist.";
     std::string footRight = "[0] back  ";
     int footSpaces = INNER_WIDTH - visual_len(footLeft) - visual_len(footRight);
     printLine(TEXT_GRAY + footLeft + std::string(footSpaces > 0 ? footSpaces : 0, ' ') + footRight);
 
-    // ۵. کف جدول
     std::cout << BORDER_BLUE << "  ╚" << repeatStr("═", INNER_WIDTH) << "╝" << RESET << std::endl;
 
-    // پرامپت انتخاب سطر در بیرون باکس
     std::cout << std::endl << TEXT_WHITE << "Choice: " << RESET;
 }
 
@@ -458,24 +467,21 @@ void UIRenderer::printMainMenu(const std::string& lastPlayedSong) const
     clearScreen(); 
     std::cout << std::endl;
 
-    // کدهای رنگی ANSI (کاملاً هماهنگ با صفحه پخش)
     const std::string RESET        = "\033[0m";
-    const std::string BORDER_BLUE  = "\033[38;5;111m"; // آبی مرزها
-    const std::string TEXT_WHITE   = "\033[97m";       // سفید درخشان
-    const std::string TEXT_GRAY    = "\033[38;5;244m"; // خاکستری نوشته‌ها
-    const std::string VALUE_GREEN  = "\033[38;5;114m"; // سبز برای نام آهنگ
-    const std::string OPTION_NUM   = "\033[38;5;220m"; // زرد طلایی برای شماره گزینه‌ها
+    const std::string BORDER_BLUE  = "\033[38;5;111m"; 
+    const std::string TEXT_WHITE   = "\033[97m";       
+    const std::string TEXT_GRAY    = "\033[38;5;244m"; 
+    const std::string VALUE_GREEN  = "\033[38;5;114m"; 
+    const std::string OPTION_NUM   = "\033[38;5;220m";
 
-    const int INNER_WIDTH = 60; // حفظ عرض ثابت ۶۰ تایی برای هماهنگی کامل با کل برنامه
+    const int INNER_WIDTH = 60; 
 
-    // تابع کمکی تکرار کاراکتر
     auto repeatStr = [](const std::string& ch, int count) {
         std::string r;
         for (int i = 0; i < count; ++i) r += ch;
         return r;
     };
 
-    // تابع جادویی محاسبه طول واقعی بصری
     auto visual_len = [](const std::string& str) {
         int len = 0;
         bool in_ansi = false;
@@ -494,7 +500,6 @@ void UIRenderer::printMainMenu(const std::string& lastPlayedSong) const
         return len;
     };
 
-    // تابع چاپ خطوط صاف و تراز شده
     auto printLine = [&](const std::string& content) {
         int current_vis_len = visual_len(content);
         int padding = INNER_WIDTH - current_vis_len;
@@ -505,7 +510,6 @@ void UIRenderer::printMainMenu(const std::string& lastPlayedSong) const
         std::cout << BORDER_BLUE << "║" << RESET << std::endl;
     };
 
-    // ۱. سقف جدول و هدر منو
     std::cout << BORDER_BLUE << "  ╔" << repeatStr("═", INNER_WIDTH) << "╗" << RESET << std::endl;
     
     std::string menuTitle = "Main Menu";
@@ -514,31 +518,25 @@ void UIRenderer::printMainMenu(const std::string& lastPlayedSong) const
     
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
 
-    // فاصله داخلی برای زیبایی
     printLine("");
 
-    // ۲. آیتم‌های منو (استایل‌دهی شده با زرد طلایی برای شماره‌ها)
     printLine("   " + OPTION_NUM + "1." + RESET + " Now Playing");
     printLine("   " + OPTION_NUM + "2." + RESET + " View Playlists");
     printLine("   " + OPTION_NUM + "3." + RESET + " Current Playlist Tracks");
     printLine("   " + OPTION_NUM + "4." + RESET + " Settings");
     
-    printLine(""); // فاصله بین گزینه‌ها و کلید خروج
+    printLine("");
     printLine("   " + OPTION_NUM + "0." + RESET + " Exit Application");
     
     printLine("");
 
-    // ۳. بخش آهنگ قبلی (Last Played) داخل خود باکس
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
     
-    // اگر آهنگی پخش نشده بود کلمه None و در غیر این صورت نام آهنگ (کات شده تا حداکثر ۴۴ کاراکتر برای جا شدن) نمایش داده می‌شود
     std::string displaySong = lastPlayedSong.empty() ? "None" : truncate(lastPlayedSong, 44);
     printLine("  " + TEXT_GRAY + "Last played: " + VALUE_GREEN + displaySong);
 
-    // ۴. کف جدول
     std::cout << BORDER_BLUE << "  ╚" << repeatStr("═", INNER_WIDTH) << "╝" << RESET << std::endl;
 
-    // محل دریافت ورودی (پرامپت اصلی) در زیر جدول با فاصله مناسب
     std::cout << std::endl << "  " << TEXT_WHITE << "Enter option: " << RESET;
 }
 
@@ -547,13 +545,12 @@ void UIRenderer::printPlaylistView(const std::string& playlistName, const std::v
     clearScreen(); 
     std::cout << std::endl;
 
-    // کدهای رنگی ANSI برای حفظ یکپارچگی مانیتور
     const std::string RESET        = "\033[0m";
     const std::string BORDER_BLUE  = "\033[38;5;111m"; 
     const std::string TEXT_WHITE   = "\033[97m";       
     const std::string TEXT_GRAY    = "\033[38;5;244m"; 
-    const std::string CURRENT_GOLD = "\033[38;5;220m"; // زرد برای ترک در حال پخش
-    const std::string TRACK_GREEN  = "\033[38;5;114m"; // سبز ملایم برای عنوان آهنگ‌ها
+    const std::string CURRENT_GOLD = "\033[38;5;220m"; 
+    const std::string TRACK_GREEN  = "\033[38;5;114m";  
 
     const int INNER_WIDTH = 60; 
 
@@ -583,21 +580,18 @@ void UIRenderer::printPlaylistView(const std::string& playlistName, const std::v
         std::cout << BORDER_BLUE << "║" << RESET << std::endl;
     };
 
-    // ۱. سقف جدول و هدر نام پلی‌لیست
     std::cout << BORDER_BLUE << "  ╔" << repeatStr("═", INNER_WIDTH) << "╗" << RESET << std::endl;
     std::string titleText = "Playlist: " + (playlistName.empty() ? "None" : playlistName);
     int titlePad = (INNER_WIDTH - visual_len(titleText)) / 2;
     printLine(std::string(titlePad > 0 ? titlePad : 0, ' ') + TEXT_WHITE + titleText);
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
 
-    // ۲. هدر ستون‌های جدول ترک‌ها
     std::string colLeft = "  #   Title";
     std::string colRight = "Artist";
     int colSpaces = INNER_WIDTH - visual_len(colLeft) - visual_len(colRight) - 6;
     printLine(colLeft + std::string(colSpaces > 0 ? colSpaces : 0, ' ') + colRight + "      ");
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
 
-    // ۳. رندر دینامیک ترک‌ها
     if (tracks.empty()) {
         printLine("");
         std::string emptyMsg = "No tracks in this playlist.";
@@ -608,34 +602,27 @@ void UIRenderer::printPlaylistView(const std::string& playlistName, const std::v
         for (size_t i = 0; i < tracks.size(); ++i) {
             const auto& track = tracks[i];
             
-            // اگر آهنگ در حال پخش بود کل خط زرد می‌شود، در غیر این صورت خاکستری/سفید
             std::string rowColor = track.isCurrent ? CURRENT_GOLD : TEXT_GRAY;
             std::string titleColor = track.isCurrent ? CURRENT_GOLD : TRACK_GREEN;
             
-            // نماد وضعیت (فلش پخش یا پدینگ خالی)
             std::string prefix = track.isCurrent ? "▶ " : "  ";
             std::string idxStr = std::to_string(i + 1);
             
-            // کات کردن طول رشته‌ها برای جلوگیری از شکستن خطوط
             std::string cleanTitle = truncate(track.title, 28);
             std::string cleanArtist = truncate(track.artist, 18);
             
-            // ساخت بخش چپ (شماره و عنوان)
             std::string leftPart = " " + prefix + idxStr;
-            // تراز کردن شماره سطرها
             if (idxStr.length() == 1) leftPart += "   ";
             else leftPart += "  ";
             
             leftPart += titleColor + cleanTitle;
             
-            // محاسبه فاصله تا ستون هنرمند (عرض بخش چپ را روی ۳۸ کاراکتر ثابت نگه‌می‌داریم)
             int leftVis = visual_len(leftPart);
             std::string middleSpaces = "";
             if (leftVis < 42) {
                 middleSpaces = std::string(42 - leftVis, ' ');
             }
             
-            // همبل کردن کل سطر و اعمال پدینگ نهایی سمت راست
             std::string fullRowContent = leftPart + middleSpaces + rowColor + cleanArtist;
             int totalVis = visual_len(fullRowContent);
             int finalPadding = INNER_WIDTH - totalVis - 2; 
@@ -644,17 +631,14 @@ void UIRenderer::printPlaylistView(const std::string& playlistName, const std::v
         }
     }
 
-    // ۴. فوتر راهنمای پیشرفته (نوار ابزار)
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
-    std::string footLeft = " [s]Sort  [f]Filter  [/]Search  [c]Clear";
+    std::string footLeft = "[p]Play  [s]Sort  [f]Filter  [/]Search  [c]Clear";
     std::string footRight = "[0]Back ";
     int footSpaces = INNER_WIDTH - visual_len(footLeft) - visual_len(footRight);
     printLine(TEXT_GRAY + footLeft + std::string(footSpaces > 0 ? footSpaces : 0, ' ') + footRight);
 
-    // ۵. کف جدول
     std::cout << BORDER_BLUE << "  ╚" << repeatStr("═", INNER_WIDTH) << "╝" << RESET << std::endl;
 
-    // پرامپت انتخاب
     std::cout << std::endl << TEXT_WHITE << "  Choice (number or command): " << RESET;
 }
 
@@ -664,13 +648,12 @@ void UIRenderer::printSettingsView(const std::string& currentModeStr) const
     clearScreen(); 
     std::cout << std::endl;
 
-    // کدهای رنگی ANSI برای ثبات کل نرم‌افزار
     const std::string RESET        = "\033[0m";
     const std::string BORDER_BLUE  = "\033[38;5;111m"; 
     const std::string TEXT_WHITE   = "\033[97m";       
     const std::string TEXT_GRAY    = "\033[38;5;244m"; 
-    const std::string OPTION_NUM   = "\033[38;5;220m"; // زرد طلایی برای شماره گزینه‌ها
-    const std::string CHECK_GREEN  = "\033[38;5;114m"; // سبز ملایم برای تیک وضعیت فعال
+    const std::string OPTION_NUM   = "\033[38;5;220m"; 
+    const std::string CHECK_GREEN  = "\033[38;5;114m";
 
     const int INNER_WIDTH = 60; 
 
@@ -705,16 +688,14 @@ void UIRenderer::printSettingsView(const std::string& currentModeStr) const
     return s;
     };
 
-    // ۱. سقف جدول و هدر اصلی
     std::cout << BORDER_BLUE << "  ╔" << repeatStr("═", INNER_WIDTH) << "╗" << RESET << std::endl;
     std::string titleText = "Settings - Playback Mode";
     int titlePad = (INNER_WIDTH - visual_len(titleText)) / 2;
     printLine(std::string(titlePad, ' ') + TEXT_WHITE + titleText);
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
 
-    printLine(""); // فاصله امن داخلی
+    printLine("");
 
-    // آرایه‌ای از نام گزینه‌ها و معادل‌های رشته‌ای آن‌ها در ConfigManager
     std::vector<std::pair<std::string, std::string>> modes = {
         {"1. No Repeat", "NO_REPEAT"},
         {"2. Repeat One", "REPEAT_ONE"},
@@ -722,14 +703,11 @@ void UIRenderer::printSettingsView(const std::string& currentModeStr) const
         {"4. Shuffle",    "SHUFFLE"}
     };
 
-    // ۲. رندر گزینه‌ها همراه با تیک وضعیت
     for (const auto& mode : modes) {
         bool isActive = (toUpper(currentModeStr) == toUpper(mode.second));
         
-        // قالب‌بندی نام گزینه با رنگ زرد زرد برای شماره‌ها
         std::string leftPart = "   " + OPTION_NUM + mode.first.substr(0, 2) + RESET + TEXT_WHITE + mode.first.substr(2);
         
-        // اگر این حالت فعال بود، تیک سبز رنگ سمت راست را قرار می‌دهیم
         std::string rightPart = "";
         if (isActive) {
             rightPart = CHECK_GREEN + " [✔] active" + RESET;
@@ -737,26 +715,22 @@ void UIRenderer::printSettingsView(const std::string& currentModeStr) const
             rightPart = TEXT_GRAY + "  [ ]       " + RESET;
         }
         
-        // محاسبه فاصله میانی برای چسبیدن وضعیت به دیواره سمت راست جدول
         int leftVis = visual_len(leftPart);
         int rightVis = visual_len(rightPart);
-        int middleSpaces = INNER_WIDTH - leftVis - rightVis - 4; // ۴ کاراکتر مارجین امن
+        int middleSpaces = INNER_WIDTH - leftVis - rightVis - 4; 
         
         printLine(leftPart + std::string(middleSpaces > 0 ? middleSpaces : 0, ' ') + rightPart);
     }
 
-    printLine(""); // فاصله امن داخلی
+    printLine(""); 
 
-    // ۳. فوتر راهنما برای خروج و ذخیره‌سازی خودکار
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
     std::string footLeft = "  Select a number to change mode.";
     std::string footRight = "[0] save & back  ";
     int footSpaces = INNER_WIDTH - visual_len(footLeft) - visual_len(footRight);
     printLine(TEXT_GRAY + footLeft + std::string(footSpaces > 0 ? footSpaces : 0, ' ') + footRight);
 
-    // ۴. کف جدول
     std::cout << BORDER_BLUE << "  ╚" << repeatStr("═", INNER_WIDTH) << "╝" << RESET << std::endl;
 
-    // پرامپت انتخاب بیرون باکس
     std::cout << std::endl << TEXT_WHITE << "  Choice: " << RESET;
 }

@@ -9,7 +9,7 @@ ConfigManager::ConfigManager(const std::string& configPath)
     data_["playback_mode"] = "NO_REPEAT";
     data_["active_playlist"] = "";
     load();
-    save(); // ذخیره‌سازی اولیه برای ایجاد فایل کانفیگ در صورت عدم وجود
+    save();
 }
 
 void ConfigManager::load() {
