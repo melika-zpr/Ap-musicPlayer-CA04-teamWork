@@ -91,11 +91,12 @@ ScreenType PlaylistViewScreen::handleInput() {
             
             std::system("cls");
             this->render();
-        } else if (key == 'p') {
+        } else  if (key == 'p') { 
             std::string numStr = input_->getStringInput("\n  \033[97mEnter track number to play: \033[0m");
             try {
                 int trackNumber = std::stoi(numStr);
                 int index = trackNumber - 1;
+                
                 if (index >= 0 && index < static_cast<int>(displayedSongs_.size()) && player_) {
                     int origIndex = playlist->indexOf(displayedSongs_[index]);
                     if (origIndex != -1) {

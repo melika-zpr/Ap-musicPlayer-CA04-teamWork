@@ -632,7 +632,7 @@ void UIRenderer::printPlaylistView(const std::string& playlistName, const std::v
     }
 
     std::cout << BORDER_BLUE << "  ╠" << repeatStr("═", INNER_WIDTH) << "╣" << RESET << std::endl;
-    std::string footLeft = " [s]Sort  [f]Filter  [/]Search  [c]Clear";
+    std::string footLeft = "[p]Play  [s]Sort  [f]Filter  [/]Search  [c]Clear";
     std::string footRight = "[0]Back ";
     int footSpaces = INNER_WIDTH - visual_len(footLeft) - visual_len(footRight);
     printLine(TEXT_GRAY + footLeft + std::string(footSpaces > 0 ? footSpaces : 0, ' ') + footRight);
